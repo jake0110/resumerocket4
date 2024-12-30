@@ -1,0 +1,24 @@
+run = 'python app.py'
+entrypoint = 'app.py'
+modules = ["nodejs-20", "python-3.11"]
+
+[env]
+PYTHONPATH = '${PYTHONPATH}:${REPL_HOME}'
+
+[nix]
+channel = 'stable-24_05'
+
+[languages.python]
+pattern = '**/*.py'
+syntax = 'python'
+
+[languages.python.languageServer]
+start = ['pylsp']
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
+[[ports]]
+localPort = 8080
+externalPort = 80

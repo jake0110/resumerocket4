@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Processor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .upload-form {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Resume Document Processor</h1>
+    <div class="upload-form">
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <p>Select a .docx file to process:</p>
+            <input type="file" name="file" accept=".docx">
+            <br><br>
+            <button type="submit">Upload and Process</button>
+        </form>
+    </div>
+    <div id="result"></div>
+</body>
+</html>
