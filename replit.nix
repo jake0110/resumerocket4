@@ -1,5 +1,6 @@
 { pkgs }: {
   deps = [
+    pkgs.lsof
     pkgs.python311
     pkgs.python311Packages.flask
     pkgs.python311Packages.python-docx

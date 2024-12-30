@@ -1,12 +1,11 @@
-run = 'python app.py'
-entrypoint = 'app.py'
-modules = ["nodejs-20", "python-3.11"]
+run = "python app.py"
+modules = ["python-3.11", "nodejs-20", "web"]
 
 [env]
 PYTHONPATH = '${PYTHONPATH}:${REPL_HOME}'
 
 [nix]
-channel = 'stable-24_05'
+channel = "stable-24_05"
 
 [languages.python]
 pattern = '**/*.py'
@@ -22,3 +21,7 @@ externalPort = 3000
 [[ports]]
 localPort = 8080
 externalPort = 80
+exposeLocalhost = true
+
+[deployment]
+run = ["sh", "-c", "python app.py"]
