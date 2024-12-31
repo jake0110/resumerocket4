@@ -7,7 +7,7 @@ def create_app():
     app.config['SECRET_KEY'] = 'your-secret-key-here'
     
     # Configure upload settings
-    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+    app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
     app.config['UPLOAD_FOLDER'] = 'uploads'
     app.config['ALLOWED_EXTENSIONS'] = {'docx'}
     
