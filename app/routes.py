@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from werkzeug.utils import secure_filename
 from .models import db, UploadedFile
 import os
+from .ai_processor import process_resume
 
 bp = Blueprint('main', __name__)
 
@@ -42,3 +43,9 @@ def index():
             return redirect(request.url)
             
     return render_template('upload.html')
+
+@bp.route('/process/<int:file_id>', methods=['POST'])
+def process_file(file_id):
+    if process_resume(file_id):
+        return {'status': 'success', 'message': 'Resume processed successfully'}
+    return {'status': 'error', 'message': 'Processing failed'}, 400
