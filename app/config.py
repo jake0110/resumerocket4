@@ -18,3 +18,6 @@ class Config:
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     OPENAI_MODEL = 'gpt-3.5-turbo'
     MAX_TOKENS = 1000  # Adjust based on testing 
+    
+    # Anthropic config
+    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY') 
