@@ -1,41 +1,49 @@
 from docx import Document
-import openai
+import anthropic
 from .models import db, UploadedFile
 from datetime import datetime
+import os
+from . import create_app
 
 def extract_text_from_docx(filepath):
     doc = Document(filepath)
     return '\n'.join([paragraph.text for paragraph in doc.paragraphs])
 
 def process_resume(file_id):
-    uploaded_file = UploadedFile.query.get(file_id)
-    if not uploaded_file:
-        return False
-        
     try:
+        # Get file
+        uploaded_file = UploadedFile.query.get(file_id)
+        if not uploaded_file:
+            return False
+
         # Extract text from .docx
         filepath = f"uploads/{uploaded_file.filename}"
         resume_text = extract_text_from_docx(filepath)
-        
-        # Process with OpenAI
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a professional resume reviewer. Analyze the resume and provide specific improvements."},
-                {"role": "user", "content": f"Please analyze this resume and provide specific improvements:\n\n{resume_text}"}
-            ],
-            max_tokens=1000
+
+        # Process with Claude - get key from app config
+        app = create_app()
+        api_key = app.config['ANTHROPIC_API_KEY']
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY not found in config")
+        client = anthropic.Client(api_key=api_key)
+        message = client.messages.create(
+            model="claude-3-opus-20240229",
+            max_tokens=1000,
+            messages=[{
+                "role": "user",
+                "content": f"Please analyze this resume and provide specific improvements:\n\n{resume_text}"
+            }]
         )
-        
+
         # Update database
         uploaded_file.processed = True
         uploaded_file.processing_date = datetime.utcnow()
-        uploaded_file.ai_summary = response.choices[0].message.content
+        uploaded_file.ai_summary = message.content
         db.session.commit()
-        
+
         return True
-        
+
     except Exception as e:
         uploaded_file.error_message = str(e)
         db.session.commit()
-        return False 
+        return False
