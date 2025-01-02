@@ -3,7 +3,7 @@ import anthropic
 from .models import db, UploadedFile
 from datetime import datetime
 import os
-from . import create_app
+from flask import current_app
 
 def extract_text_from_docx(filepath):
     doc = Document(filepath)
@@ -20,9 +20,8 @@ def process_resume(file_id):
         filepath = f"uploads/{uploaded_file.filename}"
         resume_text = extract_text_from_docx(filepath)
 
-        # Process with Claude - get key from app config
-        app = create_app()
-        api_key = app.config['ANTHROPIC_API_KEY']
+        # Process with Claude - get key from current_app
+        api_key = current_app.config['ANTHROPIC_API_KEY']
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY not found in config")
         client = anthropic.Client(api_key=api_key)
@@ -47,3 +46,4 @@ def process_resume(file_id):
         uploaded_file.error_message = str(e)
         db.session.commit()
         return False
+
