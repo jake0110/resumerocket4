@@ -1,0 +1,62 @@
+/* Main container styling */
+.main {
+    padding: 2rem;
+}
+
+/* Form styling */
+.stTextInput, .stTextArea {
+    background-color: white;
+}
+
+/* Button styling */
+.stButton > button {
+    width: 100%;
+    border-radius: 5px;
+    padding: 0.5rem 1rem;
+}
+
+/* Tab styling */
+.stTab {
+    background-color: #f0f2f6;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+}
+
+/* Preview container styling */
+.preview-container {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+}
+
+/* Success message styling */
+.stSuccess {
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+}
+
+/* Form container styling */
+.stForm {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Header styling */
+h1, h2, h3 {
+    color: #0066cc;
+    margin-bottom: 1rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main {
+        padding: 1rem;
+    }
+    
+    .stForm {
+        padding: 0.5rem;
+    }
+}

@@ -1,0 +1,10 @@
+[project]
+name = "repl-nix-githubimporter"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "reportlab>=4.2.5",
+    "streamlit>=1.41.1",
+    "trafilatura>=2.0.0",
+]
