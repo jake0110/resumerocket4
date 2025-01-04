@@ -5,6 +5,7 @@ from components.preview import render_preview
 import base64
 
 def main():
+    st._config.set_option('server.runOnSave', True)  # Enable live reloading
     st.set_page_config(
         page_title="Resume Builder",
         page_icon="📄",
@@ -32,7 +33,7 @@ def main():
 
     with col1:
         st.header("Enter Your Information")
-        
+
         # Template Selection
         template = st.selectbox(
             "Select Resume Template",
@@ -42,16 +43,16 @@ def main():
 
         # Tabs for different sections
         tabs = st.tabs(["Personal Info", "Education", "Experience", "Skills"])
-        
+
         with tabs[0]:
             render_personal_info()
-        
+
         with tabs[1]:
             render_education()
-            
+
         with tabs[2]:
             render_experience()
-            
+
         with tabs[3]:
             render_skills()
 
@@ -67,7 +68,7 @@ def main():
                 st.session_state.skills,
                 template
             )
-            
+
             b64_pdf = base64.b64encode(pdf_bytes).decode()
             href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="resume.pdf">Download PDF</a>'
             st.markdown(href, unsafe_allow_html=True)
