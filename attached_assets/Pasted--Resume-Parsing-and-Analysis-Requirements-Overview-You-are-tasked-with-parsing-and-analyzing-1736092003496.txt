@@ -1,0 +1,160 @@
+# Resume Parsing and Analysis Requirements
+
+## Overview
+You are tasked with parsing and analyzing resumes in a way that facilitates detailed AI evaluation of different components. Each section requires specific parsing approaches to enable meaningful analysis.
+
+## Parsing Requirements
+
+### 1. Contact Information Section
+Parse and validate:
+- Full name (with handling for middle names/initials)
+- Email address (with format validation)
+- Phone number (standardize format)
+- LinkedIn URL (extract username if present)
+- Location (city, state/province, country)
+
+Output Format:
+```json
+{
+  "contact": {
+    "full_name": "",
+    "email": "",
+    "phone": "",
+    "linkedin": "",
+    "location": {
+      "city": "",
+      "state": "",
+      "country": ""
+    }
+  }
+}
+```
+
+### 2. Professional Experience Section
+For each position:
+- Company name
+- Job title
+- Date range (start/end)
+- Location
+- Responsibilities/achievements (as structured list)
+- Keywords/skills mentioned
+- Quantifiable metrics
+
+Output Format:
+```json
+{
+  "experience": [{
+    "company": "",
+    "title": "",
+    "dates": {
+      "start": "",
+      "end": ""
+    },
+    "location": "",
+    "achievements": [],
+    "skills_mentioned": [],
+    "metrics": []
+  }]
+}
+```
+
+### 3. Education Section
+For each entry:
+- Institution name
+- Degree type
+- Major/Field of study
+- Graduation date
+- GPA (if present)
+- Relevant coursework
+- Honors/Awards
+
+Output Format:
+```json
+{
+  "education": [{
+    "institution": "",
+    "degree": "",
+    "field": "",
+    "graduation_date": "",
+    "gpa": "",
+    "coursework": [],
+    "honors": []
+  }]
+}
+```
+
+### 4. Skills Section
+Categorize skills into:
+- Technical skills (with proficiency levels if mentioned)
+- Soft skills
+- Languages
+- Certifications (with dates)
+- Tools/Software
+
+Output Format:
+```json
+{
+  "skills": {
+    "technical": [{
+      "skill": "",
+      "proficiency": ""
+    }],
+    "soft_skills": [],
+    "languages": [],
+    "certifications": [{
+      "name": "",
+      "date": "",
+      "issuer": ""
+    }],
+    "tools": []
+  }
+}
+```
+
+## Special Requirements
+
+1. Text Normalization
+- Convert all text to consistent case
+- Remove extra whitespace and special characters
+- Standardize date formats
+- Handle various list formats (bullets, dashes, numbers)
+
+2. Context Preservation
+- Maintain hierarchical relationships between items
+- Preserve chronological order within sections
+- Keep association between skills and where they were demonstrated
+
+3. Error Handling
+- Handle missing sections gracefully
+- Flag potential inconsistencies (date conflicts, format issues)
+- Provide confidence scores for extracted information
+
+4. AI-Specific Requirements
+- Extract key phrases for sentiment analysis
+- Identify achievement statements vs responsibility statements
+- Tag industry-specific terminology
+- Calculate experience duration for skills/roles
+- Generate metadata for cross-resume comparison
+
+## Output Requirements
+
+1. Structured Format
+- Provide parsed data in both JSON and structured text formats
+- Include section-specific confidence scores
+- Maintain original text references for verification
+
+2. Analysis Preparation
+- Group related skills and experiences
+- Calculate experience timelines
+- Identify pattern matches with job requirements
+- Generate summary statistics (total years of experience, skill diversity, etc.)
+
+## Implementation Notes
+
+The parser should:
+- Be resilient to different resume formats (PDF, Word, plain text)
+- Handle multiple languages if present
+- Preserve formatting when relevant to meaning
+- Generate consistent output regardless of input format
+- Provide hooks for AI model integration
+- Support incremental updates and validation
