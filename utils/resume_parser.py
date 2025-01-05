@@ -1,10 +1,15 @@
-from docx import Document
+try:
+    from docx import Document
+except ImportError as e:
+    raise ImportError(f"Failed to import python-docx. Please ensure it's installed correctly: {str(e)}")
+
 from typing import Dict, List, Optional, Tuple
 import logging
 import re
 from datetime import datetime
 import json
 
+# Configure detailed logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -13,6 +18,7 @@ class ResumeParser:
 
     def __init__(self):
         """Initialize the parser with enhanced section detection patterns."""
+        logger.info("Initializing ResumeParser")
         self.document = None
         self.section_headers = {
             'contact': [
@@ -41,29 +47,17 @@ class ResumeParser:
                 r'proficiencies'
             ]
         }
+        logger.info("ResumeParser initialized successfully")
 
     def _normalize_text(self, text: str) -> str:
-        """
-        Enhanced text normalization with better special character handling.
-
-        Args:
-            text (str): Raw text to normalize
-
-        Returns:
-            str: Normalized text
-        """
+        """Normalize text with enhanced character handling."""
         if not text:
             return ""
-
-        # Convert to lowercase for comparison
-        text = text.lower()
-        # Remove extra whitespace
+        text = text.lower().strip()
         text = ' '.join(text.split())
-        # Standardize bullets and dashes
         text = re.sub(r'[•●○▪▫◦⦿⦾⭐►▻▸▹➜➤➢➣➪➱➾]', '•', text)
-        # Keep basic punctuation but remove other special characters
         text = re.sub(r'[^\w\s.,;:•\-()]', '', text)
-        return text.strip()
+        return text
 
     def _identify_section(self, paragraph: str) -> Optional[str]:
         """
@@ -277,23 +271,15 @@ class ResumeParser:
         return skills
 
     def parse_docx(self, file_path: str) -> Dict[str, any]:
-        """
-        Parse DOCX resume with enhanced section detection and structured output.
-
-        Args:
-            file_path (str): Path to the DOCX file
-
-        Returns:
-            Dict[str, any]: Structured resume content
-        """
+        """Parse DOCX resume with enhanced section detection."""
         if not file_path:
+            logger.error("File path is empty")
             raise ValueError("File path cannot be empty")
 
         try:
+            logger.info(f"Attempting to parse DOCX file: {file_path}")
             self.document = Document(file_path)
-            logger.info(f"Successfully opened document: {file_path}")
 
-            current_section = None
             sections_content = {
                 'contact': [],
                 'education': [],
@@ -302,24 +288,37 @@ class ResumeParser:
                 'unknown': []
             }
 
+            current_section = None
+
             # First pass: Collect content by section
             for paragraph in self.document.paragraphs:
-                if not paragraph.text.strip():
+                text = paragraph.text.strip()
+                if not text:
                     continue
 
-                # Check if this paragraph is a section header
-                section = self._identify_section(paragraph.text)
+                # Check for section headers
+                section = self._identify_section(text)
                 if section:
+                    logger.info(f"Found section header: {section}")
                     current_section = section
                     continue
 
                 # Add content to appropriate section
                 if current_section:
-                    sections_content[current_section].append(paragraph.text)
+                    sections_content[current_section].append(text)
                 else:
-                    sections_content['unknown'].append(paragraph.text)
+                    # Try to identify contact info
+                    if any(re.search(pattern, text.lower()) for pattern in 
+                          [r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+                           r'\b(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b']):
+                        sections_content['contact'].append(text)
+                        logger.info("Found contact information outside of contact section")
+                    else:
+                        sections_content['unknown'].append(text)
 
-            # Second pass: Process each section with specialized extraction
+            logger.info("Initial parsing completed. Processing sections...")
+
+            # Process sections with specialized extractors
             parsed_content = {
                 'contact': self._extract_contact_info('\n'.join(sections_content['contact'])),
                 'education': self._extract_education(sections_content['education']),
@@ -328,12 +327,6 @@ class ResumeParser:
                 'metadata': {
                     'parsed_at': datetime.now().isoformat(),
                     'sections_found': [k for k, v in sections_content.items() if v and k != 'unknown'],
-                    'confidence_scores': {
-                        'contact': len(sections_content['contact']) > 0,
-                        'education': len(sections_content['education']) > 0,
-                        'experience': len(sections_content['experience']) > 0,
-                        'skills': len(sections_content['skills']) > 0
-                    }
                 }
             }
 

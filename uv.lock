@@ -1039,9 +1039,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "pypdf2", specifier = ">=3.0.1" },
-    { name = "python-docx", specifier = ">=1.1.2" },
+    { name = "python-docx", specifier = "==1.1.2" },
     { name = "reportlab", specifier = ">=4.2.5" },
-    { name = "streamlit", specifier = ">=1.41.1" },
+    { name = "streamlit", specifier = "==1.41.1" },
     { name = "trafilatura", specifier = ">=2.0.0" },
     { name = "twilio", specifier = ">=9.4.1" },
 ]

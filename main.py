@@ -41,7 +41,7 @@ except Exception as e:
 
 def main():
     try:
-        logger.info("Initializing Streamlit application...")
+        logger.info("Starting Resume Builder application")
         st.set_page_config(
             page_title="Resume Builder",
             page_icon="📄",
@@ -181,7 +181,6 @@ def main():
 
 if __name__ == "__main__":
     try:
-        logger.info("Starting Resume Builder application")
         main()
     except Exception as e:
         logger.error(f"Failed to start application: {str(e)}")
