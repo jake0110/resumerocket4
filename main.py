@@ -14,40 +14,25 @@ sys.path.append(str(project_root))
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stdout
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
 )
 logger = logging.getLogger(__name__)
 
-# Import local modules with detailed error handling
-try:
-    logger.info(f"Python path: {sys.path}")
-    logger.info("Attempting to import local modules...")
-    from utils.pdf_generator import generate_pdf
-    logger.info("Successfully imported pdf_generator")
-    from utils.resume_parser import ResumeParser
-    logger.info("Successfully imported resume_parser")
-    from components.forms import render_personal_info, render_education, render_experience, render_skills
-    logger.info("Successfully imported form components")
-    from components.preview import render_preview
-    logger.info("Successfully imported preview component")
-except ImportError as e:
-    logger.error(f"Failed to import required modules: {str(e)}")
-    logger.error(f"Current directory: {os.getcwd()}")
-    logger.error(f"Directory contents: {os.listdir('.')}")
-    raise
-except Exception as e:
-    logger.error(f"Unexpected error during imports: {str(e)}")
-    raise
+# Import local modules
+from utils.pdf_generator import generate_pdf
+from utils.resume_parser import ResumeParser
+from components.preview import render_preview
+from components.forms import render_personal_info, render_education, render_experience, render_skills
 
 def main():
     try:
-        logger.info("Starting Resume Builder application")
         st.set_page_config(
             page_title="Resume Builder",
             page_icon="📄",
             layout="wide"
         )
-        logger.info("Page config set successfully")
 
         # Initialize session state
         if 'personal_info' not in st.session_state:
@@ -60,17 +45,14 @@ def main():
             st.session_state.skills = []
         if 'parsed_resume' not in st.session_state:
             st.session_state.parsed_resume = None
-        logger.info("Session state initialized")
 
         # Load custom CSS
         try:
-            css_path = project_root / 'styles' / 'custom.css'
+            css_path = Path(__file__).parent / 'styles' / 'custom.css'
             with open(css_path) as f:
                 st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-                logger.info("Custom CSS loaded successfully")
-        except FileNotFoundError as e:
-            logger.warning(f"Custom styles not found at {css_path}: {str(e)}")
-            pass
+        except Exception as e:
+            logger.warning(f"Could not load custom CSS: {str(e)}")
 
         st.title("Professional Resume Builder")
 
@@ -131,13 +113,6 @@ def main():
                     logger.error(f"Error processing resume: {str(e)}")
                     st.error(f"Error processing resume: {str(e)}")
 
-            # Template Selection
-            template = st.selectbox(
-                "Select Resume Template",
-                ["Professional", "Modern", "Classic"],
-                key="template"
-            )
-
             # Tabs for different sections
             tabs = st.tabs(["Personal Info", "Education", "Experience", "Skills"])
 
@@ -155,6 +130,11 @@ def main():
 
         with col2:
             st.header("Resume Preview")
+            template = st.selectbox(
+                "Select Resume Template",
+                ["Professional", "Modern", "Classic"],
+                key="template"
+            )
             render_preview(template)
 
             if st.button("Generate PDF"):
@@ -170,9 +150,7 @@ def main():
                     b64_pdf = base64.b64encode(pdf_bytes).decode()
                     href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="resume.pdf">Download PDF</a>'
                     st.markdown(href, unsafe_allow_html=True)
-                    logger.info("Successfully generated PDF")
                 except Exception as e:
-                    logger.error(f"Error generating PDF: {str(e)}")
                     st.error(f"Error generating PDF: {str(e)}")
 
     except Exception as e:
@@ -180,8 +158,4 @@ def main():
         st.error(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        logger.error(f"Failed to start application: {str(e)}")
-        st.error("Failed to start the application. Please check the logs for details.")
+    main()

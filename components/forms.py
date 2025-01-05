@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import tempfile
+from utils.resume_parser import ResumeParser
 
 def render_personal_info():
     with st.form("personal_info_form"):
@@ -9,21 +10,52 @@ def render_personal_info():
         # File upload section with better visual feedback
         st.markdown("### Resume Upload")
         uploaded_file = st.file_uploader(
-            "Upload your existing resume (PDF, DOCX)",
-            type=['pdf', 'docx'],
+            "Upload your existing resume (DOCX)",
+            type=['docx'],
             key="resume_uploader",
-            help="Select a file and click 'Save Personal Info' below to complete the upload"
+            help="Upload your Word document and click 'Parse Resume' to automatically fill in your information"
         )
 
         if uploaded_file is not None:
-            st.info(f"File selected: {uploaded_file.name} - Click 'Save Personal Info' below to save your resume")
+            st.info(f"File selected: {uploaded_file.name}")
             file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Convert to MB
             if file_size > 10:  # 10MB limit
                 st.warning(f"File size ({file_size:.1f}MB) exceeds 10MB limit")
             else:
-                st.success(f"File size: {file_size:.1f}MB (Ready to upload)")
+                st.success(f"File size: {file_size:.1f}MB (Ready to parse)")
 
-        # Rest of the personal info form
+                if st.form_submit_button("Parse Resume"):
+                    try:
+                        with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
+                            tmp_file.write(uploaded_file.getvalue())
+                            tmp_file_path = tmp_file.name
+
+                            # Parse the resume
+                            parser = ResumeParser()
+                            parsed_content = parser.parse_docx(tmp_file_path)
+
+                            # Update session state with parsed content
+                            if parsed_content.get('contact'):
+                                st.session_state.personal_info = parsed_content['contact']
+                            if parsed_content.get('education'):
+                                st.session_state.education = parsed_content['education']
+                            if parsed_content.get('experience'):
+                                st.session_state.experience = parsed_content['experience']
+                            if parsed_content.get('skills'):
+                                st.session_state.skills = [
+                                    skill for category in parsed_content['skills'].values() 
+                                    for skill in category if isinstance(skill, str)
+                                ]
+
+                            st.success("✅ Resume successfully parsed! Form fields have been updated.")
+
+                            # Clean up temporary file
+                            os.unlink(tmp_file_path)
+
+                    except Exception as e:
+                        st.error(f"Error parsing resume: {str(e)}")
+
+        # Manual input fields as fallback
         name = st.text_input(
             "Full Name",
             value=st.session_state.personal_info.get('name', ''),
@@ -42,29 +74,14 @@ def render_personal_info():
             key="phone_input"
         )
 
-        # Form submission with clear upload status
+        # Save button for manual edits
         if st.form_submit_button("Save Personal Info"):
-            if uploaded_file is not None:
-                try:
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
-                        tmp_file.write(uploaded_file.getvalue())
-                        st.session_state['uploaded_resume_path'] = tmp_file.name
-                    st.success(f"✅ Resume '{uploaded_file.name}' successfully uploaded and saved!")
-                except Exception as e:
-                    st.error(f"❌ Error uploading file: {str(e)}")
-                    st.session_state['uploaded_resume_path'] = None
-
             st.session_state.personal_info = {
                 'name': name,
                 'email': email,
-                'phone': phone,
-                'resume_path': st.session_state.get('uploaded_resume_path')
+                'phone': phone
             }
             st.success("✅ Personal information saved!")
-
-        # Display current resume status
-        if 'uploaded_resume_path' in st.session_state and st.session_state['uploaded_resume_path']:
-            st.info("📄 Current uploaded resume: " + os.path.basename(st.session_state['uploaded_resume_path']))
 
 def render_education():
     st.subheader("Education")
