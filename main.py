@@ -3,10 +3,15 @@ import tempfile
 import os
 import logging
 from utils.resume_parser import ResumeParser
+from openai import OpenAI
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Initialize OpenAI client with direct environment variable
+os.environ["OPENAI_API_KEY"] = "your-api-key-here"  # Replace this with your actual API key
+client = OpenAI()  # Removed proxies argument that was causing the error
 
 # Initialize Streamlit app
 st.set_page_config(
@@ -14,6 +19,29 @@ st.set_page_config(
     page_icon="📝",
     layout="wide"
 )
+
+# Test OpenAI Connection
+def test_openai_connection():
+    try:
+        # Simple test completion to verify connection
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Latest model as of May 2024
+            messages=[{"role": "user", "content": "Hello, are you there?"}],
+            max_tokens=10
+        )
+        return True, response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"OpenAI Connection Error: {str(e)}")
+        return False, str(e)
+
+# Add test button at the top
+if st.button("Test OpenAI Connection"):
+    with st.spinner("Testing OpenAI connection..."):
+        success, message = test_openai_connection()
+        if success:
+            st.success(f"Successfully connected to OpenAI! Response: {message}")
+        else:
+            st.error(f"Failed to connect to OpenAI: {message}")
 
 # Updated roles list
 ROLES = [
