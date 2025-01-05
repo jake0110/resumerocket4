@@ -539,6 +539,12 @@ wheels = [
 ]
 
 [[package]]
+name = "logging"
+version = "0.4.9.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/4b/979db9e44be09f71e85c9c8cfc42f258adfb7d93ce01deed2788b2948919/logging-0.4.9.6.tar.gz", hash = "sha256:26f6b50773f085042d301085bd1bf5d9f3735704db9f37c1ce6d8b85c38f2417", size = 96029 }
+
+[[package]]
 name = "lxml"
 version = "5.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1230,6 +1236,7 @@ name = "repl-nix-githubimporter"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "logging" },
     { name = "openai" },
     { name = "pypdf2" },
     { name = "python-docx" },
@@ -1242,6 +1249,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "logging", specifier = ">=0.4.9.6" },
     { name = "openai", specifier = ">=1.59.3" },
     { name = "pypdf2", specifier = ">=3.0.1" },
     { name = "python-docx", specifier = "==1.1.2" },

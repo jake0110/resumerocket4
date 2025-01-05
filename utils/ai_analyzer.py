@@ -18,8 +18,7 @@ class ResumeAnalyzer:
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError(
-                "OpenAI API key not found. Please set it using ResumeAnalyzer(api_key='your-key') "
-                "or set the OPENAI_API_KEY environment variable."
+                "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
             )
 
         self.client = OpenAI(api_key=self.api_key)
@@ -37,9 +36,13 @@ class ResumeAnalyzer:
         Returns:
             Dictionary containing analysis results:
             - overall_score: 1-10 rating
+            - ats_score: 0-100 percentage
+            - keyword_match: 0-100 percentage
             - strengths: List of identified strengths
             - weaknesses: List of areas for improvement
             - suggestions: List of specific improvement suggestions
+            - ats_suggestions: List of ATS optimization tips
+            - analysis: Detailed analysis explanation
         """
         try:
             # Construct the analysis prompt
@@ -50,13 +53,17 @@ class ResumeAnalyzer:
                 model=self.model,
                 messages=[{
                     "role": "system",
-                    "content": """You are an expert resume analyst. Analyze the resume and provide feedback in JSON format with the following structure:
+                    "content": """You are an expert resume analyst and ATS optimization specialist. 
+                    Analyze the resume and provide feedback in JSON format with the following structure:
                     {
                         "overall_score": (1-10 score),
+                        "ats_score": (0-100 percentage),
+                        "keyword_match": (0-100 percentage),
                         "strengths": [list of key strengths],
                         "weaknesses": [list of areas needing improvement],
                         "suggestions": [specific actionable suggestions],
-                        "analysis": "detailed analysis explanation"
+                        "ats_suggestions": [ATS optimization tips],
+                        "analysis": "detailed analysis explanation focusing on both content quality and ATS compatibility"
                     }"""
                 }, {
                     "role": "user",
@@ -114,14 +121,17 @@ class ResumeAnalyzer:
 
         # Construct final prompt
         prompt = "\n".join([
-            "Please analyze this resume thoroughly and provide detailed feedback:",
+            "Please analyze this resume thoroughly and provide detailed feedback focusing on both content quality and ATS compatibility. Include:",
             "\n".join(sections),
             "\nProvide a comprehensive analysis including:",
             "1. Overall resume score (1-10)",
-            "2. Key strengths",
-            "3. Areas needing improvement",
-            "4. Specific suggestions for enhancement",
-            "5. Detailed explanation of the analysis"
+            "2. ATS compatibility score (0-100%)",
+            "3. Relevant keyword match percentage (0-100%)",
+            "4. Key strengths and accomplishments",
+            "5. Areas needing improvement",
+            "6. Specific suggestions for enhancement",
+            "7. ATS optimization recommendations",
+            "8. Detailed explanation of the analysis"
         ])
 
         return prompt

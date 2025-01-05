@@ -19,16 +19,19 @@ logger = logging.getLogger(__name__)
 # Add the project root to Python path
 project_root = Path(__file__).parent.absolute()
 sys.path.append(str(project_root))
-logger.debug(f"Added {project_root} to Python path")
 
 try:
-    # Import local modules
     from utils.resume_parser import ResumeParser
     from utils.ai_analyzer import ResumeAnalyzer
-    logger.debug("Successfully imported all local modules")
+    logger.info("Successfully imported local modules")
 except Exception as e:
-    logger.error(f"Failed to import modules: {str(e)}", exc_info=True)
+    logger.error(f"Failed to import modules: {str(e)}")
     raise
+
+def initialize_session_state():
+    """Initialize session state variables if they don't exist."""
+    if 'analysis_results' not in st.session_state:
+        st.session_state.analysis_results = None
 
 def main():
     try:
@@ -39,26 +42,17 @@ def main():
             layout="wide"
         )
 
-        st.title("AI-Powered Resume Analyzer")
-        st.write("Upload your resume for instant AI analysis and feedback")
-
         # Initialize session state
-        if 'analysis_results' not in st.session_state:
-            st.session_state.analysis_results = None
-        if 'api_key' not in st.session_state:
-            st.session_state.api_key = ''
+        initialize_session_state()
 
-        # API Key input in sidebar for better organization
-        with st.sidebar:
-            st.header("Configuration")
-            api_key = st.text_input(
-                "Enter your OpenAI API Key",
-                value=st.session_state.api_key,
-                type="password",
-                help="Get your API key from https://platform.openai.com/account/api-keys"
-            )
-            if api_key:
-                st.session_state.api_key = api_key
+        st.title("AI-Powered Resume Analyzer")
+        st.markdown("""
+        Upload your resume for instant AI analysis that includes:
+        - Overall resume score and evaluation
+        - Key strengths and improvement areas
+        - ATS compatibility analysis
+        - Actionable suggestions for enhancement
+        """)
 
         # Main content area
         uploaded_file = st.file_uploader(
@@ -70,9 +64,7 @@ def main():
         if uploaded_file is not None:
             st.info(f"Selected file: {uploaded_file.name}")
 
-            if not st.session_state.api_key:
-                st.warning("Please enter your OpenAI API key in the sidebar to analyze the resume.")
-            elif st.button("Analyze Resume"):
+            if st.button("Analyze Resume"):
                 try:
                     with st.spinner("Analyzing your resume..."):
                         # Save uploaded file temporarily
@@ -90,53 +82,60 @@ def main():
                             os.unlink(tmp_file_path)
                             logger.debug("Cleaned up temporary file")
 
-                            # Analyze the resume with API key from session state
-                            analyzer = ResumeAnalyzer(api_key=st.session_state.api_key)
+                            # Initialize analyzer
+                            analyzer = ResumeAnalyzer()
                             analysis_results = analyzer.analyze_resume(parsed_content)
                             st.session_state.analysis_results = analysis_results
                             logger.info("Completed resume analysis")
 
                 except Exception as e:
-                    logger.error(f"Error processing resume: {str(e)}", exc_info=True)
+                    logger.error(f"Error processing resume: {str(e)}")
                     st.error(f"Error processing resume: {str(e)}")
 
         # Display analysis results if available
         if st.session_state.analysis_results:
             results = st.session_state.analysis_results
 
-            # Overall Score with visual indicator
-            score = float(results.get('overall_score', 0))
-            st.header("Analysis Results")
-            col1, col2 = st.columns([1, 4])
-            with col1:
-                st.metric("Overall Score", f"{score}/10")
-            with col2:
-                progress = score / 10
-                st.progress(progress)
+            # Create three columns for the main metrics
+            col1, col2, col3 = st.columns(3)
 
-            # Detailed Analysis
-            st.subheader("Detailed Analysis")
+            with col1:
+                st.metric("Overall Score", f"{results.get('overall_score', 0)}/10")
+
+            with col2:
+                st.metric("ATS Compatibility", f"{results.get('ats_score', 0)}%")
+
+            with col3:
+                st.metric("Keyword Match", f"{results.get('keyword_match', 0)}%")
+
+            # Detailed Analysis Section
+            st.subheader("📊 Detailed Analysis")
             st.write(results.get('analysis', ''))
 
-            # Strengths and Weaknesses in columns
+            # Strengths and Areas for Improvement
             col1, col2 = st.columns(2)
             with col1:
-                st.subheader("✅ Strengths")
+                st.subheader("✅ Key Strengths")
                 for strength in results.get('strengths', []):
-                    st.write(f"• {strength}")
+                    st.markdown(f"- {strength}")
 
             with col2:
-                st.subheader("🔍 Areas for Improvement")
+                st.subheader("🎯 Areas for Improvement")
                 for weakness in results.get('weaknesses', []):
-                    st.write(f"• {weakness}")
+                    st.markdown(f"- {weakness}")
 
-            # Improvement Suggestions
-            st.subheader("📈 Suggested Improvements")
+            # ATS Optimization Suggestions
+            st.subheader("🤖 ATS Optimization Tips")
+            for ats_tip in results.get('ats_suggestions', []):
+                st.markdown(f"- {ats_tip}")
+
+            # Action Items
+            st.subheader("📈 Recommended Actions")
             for suggestion in results.get('suggestions', []):
-                st.write(f"• {suggestion}")
+                st.markdown(f"- {suggestion}")
 
     except Exception as e:
-        logger.error(f"Application error: {str(e)}", exc_info=True)
+        logger.error(f"Application error: {str(e)}")
         st.error(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
