@@ -10,6 +10,14 @@ def render_personal_info():
     with st.form("personal_info_form"):
         st.subheader("Personal Information")
 
+        # OpenAI API Key input
+        api_key = st.text_input(
+            "OpenAI API Key",
+            type="password",
+            help="Required for AI-powered resume analysis",
+            key="openai_api_key"
+        )
+
         # File upload section with better visual feedback
         st.markdown("### Resume Upload")
         uploaded_file = st.file_uploader(
@@ -34,8 +42,8 @@ def render_personal_info():
                             tmp_file_path = tmp_file.name
                             logger.debug(f"Saved uploaded file to {tmp_file_path}")
 
-                            # Parse the resume
-                            parser = ResumeParser()
+                            # Parse the resume with OpenAI integration
+                            parser = ResumeParser(openai_api_key=api_key)
                             parsed_content = parser.parse_docx(tmp_file_path)
                             logger.info("Successfully parsed resume content")
 
@@ -49,7 +57,32 @@ def render_personal_info():
                             if parsed_content.get('skills'):
                                 st.session_state.skills = parsed_content['skills']
 
-                            st.success("✅ Resume successfully parsed! Form fields have been updated.")
+                            # Display AI analysis if available
+                            if parsed_content.get('ai_analysis'):
+                                st.success("✅ Resume successfully parsed with AI analysis!")
+                                ai_analysis = parsed_content['ai_analysis']
+
+                                st.markdown("### AI Analysis Results")
+                                if ai_analysis.get('experience_level'):
+                                    st.write("Experience Level:", ai_analysis['experience_level'])
+
+                                if ai_analysis.get('key_skills'):
+                                    st.write("Key Skills:", ", ".join(ai_analysis['key_skills']))
+
+                                if ai_analysis.get('experience_summary'):
+                                    st.write("Experience Summary:", ai_analysis['experience_summary'])
+
+                                if ai_analysis.get('best_suited_roles'):
+                                    st.write("Best Suited Roles:", ", ".join(ai_analysis['best_suited_roles']))
+
+                                if ai_analysis.get('improvement_suggestions'):
+                                    st.markdown("#### Improvement Suggestions:")
+                                    for suggestion in ai_analysis['improvement_suggestions']:
+                                        st.markdown(f"- {suggestion}")
+                            else:
+                                st.success("✅ Resume successfully parsed! Form fields have been updated.")
+                                if api_key:
+                                    st.warning("Note: AI analysis was not available. Please check your API key.")
 
                             # Clean up temporary file
                             os.unlink(tmp_file_path)
@@ -78,12 +111,22 @@ def render_personal_info():
             key="phone_input"
         )
 
+        # Professional level dropdown
+        level_options = ['Entry Level', 'Mid Level', 'Senior Level', 'Executive']
+        prof_level = st.selectbox(
+            "Professional Level",
+            options=level_options,
+            index=0,
+            key="prof_level"
+        )
+
         # Save button for manual edits
         if st.form_submit_button("Save Personal Info"):
             st.session_state.personal_info = {
                 'name': name,
                 'email': email,
-                'phone': phone
+                'phone': phone,
+                'professional_level': prof_level
             }
             st.success("✅ Personal information saved!")
 

@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Tuple
 import re
 from datetime import datetime
 import json
+import requests
 
 # Configure detailed logging
 logging.basicConfig(level=logging.INFO)
@@ -15,11 +16,12 @@ except ImportError as e:
     raise ImportError("python-docx is required but not properly installed. Please install it using 'pip install python-docx'")
 
 class ResumeParser:
-    """Advanced resume parsing with intelligent section detection and structured output."""
+    """Advanced resume parsing with intelligent section detection and OpenAI analysis."""
 
-    def __init__(self):
+    def __init__(self, openai_api_key: Optional[str] = None):
         """Initialize the parser with enhanced section detection patterns."""
         logger.info("Initializing ResumeParser")
+        self.openai_api_key = openai_api_key
         self.section_headers = {
             'contact': [
                 r'contact\s*info(rmation)?',
@@ -48,15 +50,71 @@ class ResumeParser:
             ]
         }
 
+    def analyze_with_openai(self, text: str) -> Dict[str, any]:
+        """
+        Use OpenAI to analyze resume content and provide insights.
+
+        Args:
+            text (str): Resume content to analyze
+
+        Returns:
+            Dict with analysis results including key skills, experience summary, and recommendations
+        """
+        if not self.openai_api_key:
+            logger.warning("OpenAI API key not provided, skipping analysis")
+            return {}
+
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.openai_api_key}",
+                "Content-Type": "application/json"
+            }
+
+            prompt = f"""Analyze this resume content and provide structured feedback:
+            {text}
+
+            Please provide analysis in the following JSON format:
+            {{
+                "key_skills": [list of most important skills],
+                "experience_summary": "brief overview of experience",
+                "improvement_suggestions": [list of specific suggestions],
+                "best_suited_roles": [list of recommended job titles],
+                "experience_level": "junior/mid/senior based on experience"
+            }}"""
+
+            data = {
+                "model": "gpt-3.5-turbo",
+                "messages": [{"role": "user", "content": prompt}],
+                "response_format": {"type": "json_object"}
+            }
+
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=30
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                return json.loads(result['choices'][0]['message']['content'])
+            else:
+                logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
+                return {}
+
+        except Exception as e:
+            logger.error(f"Error analyzing resume with OpenAI: {str(e)}")
+            return {}
+
     def parse_docx(self, file_path: str) -> Dict[str, any]:
         """
-        Parse DOCX resume file and extract structured information.
+        Parse DOCX resume file and extract structured information with OpenAI analysis.
 
         Args:
             file_path (str): Path to the DOCX file
 
         Returns:
-            Dict[str, any]: Structured resume data
+            Dict[str, any]: Structured resume data with AI analysis
         """
         logger.info(f"Attempting to parse DOCX file: {file_path}")
 
@@ -73,12 +131,15 @@ class ResumeParser:
             }
 
             current_section = None
+            full_text = []
 
-            # First pass: Collect content by section
+            # First pass: Collect content by section and full text
             for paragraph in doc.paragraphs:
                 text = paragraph.text.strip()
                 if not text:
                     continue
+
+                full_text.append(text)
 
                 # Check if this paragraph is a section header
                 section = self._identify_section(text)
@@ -104,6 +165,12 @@ class ResumeParser:
                 }
             }
 
+            # Add AI analysis if API key is available
+            if self.openai_api_key:
+                full_text_content = '\n'.join(full_text)
+                ai_analysis = self.analyze_with_openai(full_text_content)
+                parsed_data['ai_analysis'] = ai_analysis
+
             logger.info(f"Successfully parsed resume with sections: {parsed_data['metadata']['sections_found']}")
             return parsed_data
 
@@ -115,11 +182,8 @@ class ResumeParser:
         """Normalize text for consistent processing."""
         if not text:
             return ""
-        # Convert to lowercase and strip whitespace
         text = text.lower().strip()
-        # Replace multiple spaces with single space
         text = ' '.join(text.split())
-        # Normalize bullet points
         text = re.sub(r'[•●○▪▫◦⦿⦾⭐►▻▸▹➜➤➢➣➪➱➾]', '•', text)
         return text
 
@@ -168,7 +232,6 @@ class ResumeParser:
         education_entries = []
 
         for para in paragraphs:
-            # Skip empty paragraphs
             if not para.strip():
                 continue
 
