@@ -8,62 +8,45 @@ logger = logging.getLogger(__name__)
 class ResumeAnalyzer:
     """AI-powered resume analysis using OpenAI GPT."""
 
-    def __init__(self, api_key: Optional[str] = None):
-        """
-        Initialize the OpenAI client.
-
-        Args:
-            api_key: Optional API key. If not provided, will try to get from environment variable.
-        """
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+    def __init__(self):
+        """Initialize the OpenAI client with API key from environment."""
+        self.api_key = os.environ.get("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError(
                 "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
             )
 
         self.client = OpenAI(api_key=self.api_key)
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        self.model = "gpt-4o"
+        # Use gpt-4-turbo-preview as it's the latest model as of January 2024
+        self.model = "gpt-4-turbo-preview"
 
     def analyze_resume(self, resume_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Analyze resume content using GPT and provide structured feedback.
 
         Args:
-            resume_data: Dictionary containing parsed resume sections
+            resume_data: Dictionary containing parsed resume sections and user context
 
         Returns:
-            Dictionary containing analysis results:
-            - overall_score: 1-10 rating
-            - ats_score: 0-100 percentage
-            - keyword_match: 0-100 percentage
-            - strengths: List of identified strengths
-            - weaknesses: List of areas for improvement
-            - suggestions: List of specific improvement suggestions
-            - ats_suggestions: List of ATS optimization tips
-            - analysis: Detailed analysis explanation
+            Dictionary containing analysis results
         """
         try:
             # Construct the analysis prompt
             prompt = self._construct_analysis_prompt(resume_data)
 
-            # Get GPT analysis with structured output
+            # Get GPT analysis
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{
                     "role": "system",
-                    "content": """You are an expert resume analyst and ATS optimization specialist. 
+                    "content": """You are an expert resume analyst. 
                     Analyze the resume and provide feedback in JSON format with the following structure:
                     {
                         "overall_score": (1-10 score),
-                        "ats_score": (0-100 percentage),
-                        "keyword_match": (0-100 percentage),
                         "strengths": [list of key strengths],
                         "weaknesses": [list of areas needing improvement],
                         "suggestions": [specific actionable suggestions],
-                        "ats_suggestions": [ATS optimization tips],
-                        "analysis": "detailed analysis explanation focusing on both content quality and ATS compatibility"
+                        "analysis": "detailed analysis explanation focusing on content quality and impact"
                     }"""
                 }, {
                     "role": "user",
@@ -85,9 +68,19 @@ class ResumeAnalyzer:
         """Construct a detailed prompt for GPT analysis."""
         sections = []
 
+        # Add user context
+        if resume_data.get('user_context'):
+            context = resume_data['user_context']
+            sections.append("User Context:")
+            sections.extend([
+                f"- Name: {context.get('name', 'Not provided')}",
+                f"- Role: {context.get('role', 'Not provided')}",
+                f"- Email: {context.get('email', 'Not provided')}"
+            ])
+
         # Add contact information
         if resume_data.get('contact'):
-            sections.append("Contact Information:")
+            sections.append("\nContact Information:")
             contact = resume_data['contact']
             sections.extend([
                 f"- Name: {contact.get('name', 'Not provided')}",
@@ -119,19 +112,18 @@ class ResumeAnalyzer:
             sections.append("\nSkills:")
             sections.append(", ".join(resume_data['skills']))
 
-        # Construct final prompt
+        # Construct final prompt with role-specific context
+        role = resume_data.get('user_context', {}).get('role', '')
+        sections.append(f"\nAnalyzing for role: {role}")
+
         prompt = "\n".join([
-            "Please analyze this resume thoroughly and provide detailed feedback focusing on both content quality and ATS compatibility. Include:",
-            "\n".join(sections),
-            "\nProvide a comprehensive analysis including:",
-            "1. Overall resume score (1-10)",
-            "2. ATS compatibility score (0-100%)",
-            "3. Relevant keyword match percentage (0-100%)",
-            "4. Key strengths and accomplishments",
-            "5. Areas needing improvement",
-            "6. Specific suggestions for enhancement",
-            "7. ATS optimization recommendations",
-            "8. Detailed explanation of the analysis"
+            "Please analyze this resume thoroughly for the specified role, focusing on:",
+            "1. Alignment of experience and skills with the target role",
+            "2. Impact and achievement presentation",
+            "3. Overall professional narrative",
+            "4. Areas for enhancement specific to the role",
+            "\nResume Content:",
+            "\n".join(sections)
         ])
 
         return prompt
