@@ -20,7 +20,7 @@ st.set_page_config(
 if 'analysis_results' not in st.session_state:
     st.session_state.analysis_results = {}
 
-# Available roles for selection - Updated with exact specifications
+# Updated roles list
 ROLES = [
     "Individual Contributor",
     "Manager",
@@ -45,7 +45,7 @@ with st.form("contact_info"):
     email = st.text_input("Email Address*", key="email")
     phone = st.text_input("Phone Number (Optional)", key="phone")
 
-    # Role Selection
+    # Role Selection with updated options
     role = st.selectbox(
         "Select Role*",
         options=ROLES,
@@ -65,7 +65,7 @@ with st.form("contact_info"):
 if submit_button and uploaded_file and name and email and role:
     try:
         with st.spinner("Analyzing your resume..."):
-            # Process the uploaded file
+            # Save uploaded file
             with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
                 tmp_file.write(uploaded_file.getvalue())
                 tmp_file_path = tmp_file.name
@@ -81,37 +81,57 @@ if submit_button and uploaded_file and name and email and role:
                     try:
                         analyzer = ResumeAnalyzer()
                         logger.info("Successfully initialized ResumeAnalyzer")
-                    except Exception as e:
-                        logger.error(f"Failed to initialize ResumeAnalyzer: {str(e)}")
-                        st.error("Unable to initialize AI analysis service. Please try again later.")
+
+                        # Add user context to parsed content
+                        parsed_content['user_context'] = {
+                            'name': name,
+                            'email': email,
+                            'phone': phone,
+                            'role': role
+                        }
+
+                        # Get analysis
+                        try:
+                            analysis_results = analyzer.analyze_resume(parsed_content)
+                            st.session_state.analysis_results = analysis_results
+                            logger.info("Resume analysis completed successfully")
+                        except ValueError as e:
+                            logger.error(f"Analysis Error: {str(e)}")
+                            st.error("Error analyzing resume. Please ensure your resume is properly formatted and try again.")
+                            if os.path.exists(tmp_file_path):
+                                os.unlink(tmp_file_path)
+                            st.stop()
+                        except Exception as e:
+                            logger.error(f"Unexpected error during analysis: {str(e)}")
+                            st.error("An unexpected error occurred during analysis. Please try again later.")
+                            if os.path.exists(tmp_file_path):
+                                os.unlink(tmp_file_path)
+                            st.stop()
+
+                    except ValueError as ve:
+                        logger.error(f"API Key Error: {str(ve)}")
+                        st.error("Unable to access AI analysis service. Please try again later or contact support.")
                         if os.path.exists(tmp_file_path):
                             os.unlink(tmp_file_path)
                         st.stop()
-
-                    # Add user context to parsed content
-                    parsed_content['user_context'] = {
-                        'name': name,
-                        'email': email,
-                        'phone': phone,
-                        'role': role
-                    }
-
-                    # Get analysis
-                    analysis_results = analyzer.analyze_resume(parsed_content)
-                    st.session_state.analysis_results = analysis_results
-                    logger.info("Resume analysis completed successfully")
+                    except Exception as e:
+                        logger.error(f"Analyzer Error: {str(e)}")
+                        st.error("Unable to initialize analysis service. Please try again later.")
+                        if os.path.exists(tmp_file_path):
+                            os.unlink(tmp_file_path)
+                        st.stop()
 
                     # Cleanup temporary file
                     os.unlink(tmp_file_path)
 
                 except Exception as e:
-                    logger.error(f"Error during resume analysis: {str(e)}")
-                    st.error(f"Error analyzing resume: {str(e)}")
+                    logger.error(f"Error during resume parsing: {str(e)}")
+                    st.error("Error processing resume. Please ensure you've uploaded a valid DOCX file.")
                     if os.path.exists(tmp_file_path):
                         os.unlink(tmp_file_path)
 
     except Exception as e:
-        logger.error(f"Unexpected error during analysis: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}")
         st.error("An unexpected error occurred. Please try again.")
 
 elif submit_button:
