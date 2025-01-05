@@ -3,7 +3,6 @@ import tempfile
 import os
 import logging
 from utils.resume_parser import ResumeParser
-from utils.ai_analyzer import ResumeAnalyzer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -11,44 +10,39 @@ logger = logging.getLogger(__name__)
 
 # Initialize Streamlit app
 st.set_page_config(
-    page_title="Resume Analyzer",
+    page_title="Resume Builder",
     page_icon="📝",
     layout="wide"
 )
-
-# Initialize session state
-if 'analysis_results' not in st.session_state:
-    st.session_state.analysis_results = {}
 
 # Updated roles list
 ROLES = [
     "Individual Contributor",
     "Manager",
     "Client Manager",
-    "Selling Partner/Principal",
+    "Selling Partner or Principal",
     "Practice Leader"
 ]
 
 # Main UI elements
-st.title("Resume Analyzer")
+st.title("Resume Builder")
 st.markdown("""
-Upload your resume for instant AI analysis that includes:
-- Overall resume score and evaluation
-- Key strengths and improvement areas
-- Actionable suggestions for enhancement
+Upload your resume and fill in your information:
+- Personal details
+- Professional experience
+- Education history
+- Skills and qualifications
 """)
 
-# Initialize AI analyzer early to catch any connection issues
-try:
-    analyzer = ResumeAnalyzer()
-    # Test connection
-    if not analyzer.test_connection():
-        st.error("Unable to connect to AI service. Please try again later.")
-        st.stop()
-    logger.info("Successfully connected to OpenAI service")
-except Exception as e:
-    st.error(f"Error initializing AI service: {str(e)}")
-    st.stop()
+# Initialize session state for storing resume data
+if 'personal_info' not in st.session_state:
+    st.session_state.personal_info = {}
+if 'education' not in st.session_state:
+    st.session_state.education = []
+if 'experience' not in st.session_state:
+    st.session_state.experience = []
+if 'skills' not in st.session_state:
+    st.session_state.skills = []
 
 # Contact Information Form
 with st.form("contact_info"):
@@ -68,15 +62,15 @@ with st.form("contact_info"):
     uploaded_file = st.file_uploader(
         "Upload your resume (DOCX)*",
         type=['docx'],
-        help="Upload your resume in DOCX format for AI analysis"
+        help="Upload your resume in DOCX format"
     )
 
-    submit_button = st.form_submit_button("Analyze Resume")
+    submit_button = st.form_submit_button("Process Resume")
 
-# Analysis logic
+# Process the uploaded resume
 if submit_button and uploaded_file and name and email and role:
     try:
-        with st.spinner("Analyzing your resume..."):
+        with st.spinner("Processing your resume..."):
             # Save uploaded file
             with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
                 tmp_file.write(uploaded_file.getvalue())
@@ -87,19 +81,19 @@ if submit_button and uploaded_file and name and email and role:
                     parser = ResumeParser()
                     parsed_content = parser.parse_docx(tmp_file_path)
 
-                    # Add user context to parsed content
-                    parsed_content['user_context'] = {
-                        'name': name,
-                        'email': email,
-                        'phone': phone,
-                        'role': role
-                    }
+                    # Store parsed content in session state
+                    if parsed_content.get('contact'):
+                        st.session_state.personal_info = parsed_content['contact']
+                    if parsed_content.get('education'):
+                        st.session_state.education = parsed_content['education']
+                    if parsed_content.get('experience'):
+                        st.session_state.experience = parsed_content['experience']
+                    if parsed_content.get('skills'):
+                        st.session_state.skills = parsed_content['skills']
 
-                    # Get analysis
-                    analysis_results = analyzer.analyze_resume(parsed_content)
-                    st.session_state.analysis_results = analysis_results
+                    st.success("Resume processed successfully!")
 
-                    # Cleanup temporary file
+                    # Clean up temporary file
                     os.unlink(tmp_file_path)
 
                 except Exception as e:
@@ -121,38 +115,3 @@ elif submit_button:
         st.error("Please select a role")
     if not uploaded_file:
         st.error("Please upload your resume")
-
-# Display results
-if st.session_state.analysis_results:
-    try:
-        results = st.session_state.analysis_results
-
-        st.header("Analysis Results")
-        col1, col2 = st.columns([1, 4])
-        with col1:
-            st.metric("Overall Score", f"{results.get('overall_score', 0)}/10")
-        with col2:
-            progress = float(results.get('overall_score', 0)) / 10
-            st.progress(progress)
-
-        st.subheader("📊 Detailed Analysis")
-        st.write(results.get('analysis', ''))
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("✅ Key Strengths")
-            for strength in results.get('strengths', []):
-                st.markdown(f"- {strength}")
-
-        with col2:
-            st.subheader("🎯 Areas for Improvement")
-            for weakness in results.get('weaknesses', []):
-                st.markdown(f"- {weakness}")
-
-        st.subheader("📈 Recommended Actions")
-        for suggestion in results.get('suggestions', []):
-            st.markdown(f"- {suggestion}")
-
-    except Exception as e:
-        logger.error(f"Error displaying results: {str(e)}")
-        st.error("Error displaying analysis results")

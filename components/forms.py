@@ -16,7 +16,7 @@ def render_personal_info():
             "Upload your existing resume (DOCX)",
             type=['docx'],
             key="resume_uploader",
-            help="Upload your Word document and click 'Parse Resume' to automatically fill in your information"
+            help="Upload your Word document to automatically fill in your information"
         )
 
         if uploaded_file is not None:
