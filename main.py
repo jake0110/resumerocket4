@@ -3,19 +3,31 @@ from openai import OpenAI
 
 st.title("OpenAI Connection Test")
 
-api_key = "sk-..." # We'll replace this with your actual key
+def init_openai():
+    try:
+        client = OpenAI()  # This will automatically use OPENAI_API_KEY from environment
+
+        # Add a simple test message
+        st.info("Testing connection...")
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "user", "content": "Say hello"}
+            ]
+        )
+
+        if response and response.choices:
+            st.success("✅ Connection successful!")
+            st.write("Response:", response.choices[0].message.content)
+        else:
+            st.error("❌ No response received from OpenAI")
+
+    except Exception as e:
+        st.error("❌ Connection failed")
+        st.error(str(e))
+        if "api_key" in str(e).lower():
+            st.info("💡 Make sure OPENAI_API_KEY is set in your environment variables")
 
 # Initialize client button
 if st.button("Initialize OpenAI Client"):
-    try:
-        client = OpenAI(api_key=api_key, base_url="https://api.openai.com/v1")
-        st.success("OpenAI client initialized successfully!")
-
-        # Test the connection with a simple completion
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": "Hello"}]
-        )
-        st.success(f"Response received: {response.choices[0].message.content}")
-    except Exception as e:
-        st.error(f"Failed to initialize OpenAI client: {str(e)}")
+    init_openai()
