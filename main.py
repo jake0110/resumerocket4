@@ -14,28 +14,29 @@ if st.button("Initialize OpenAI Client"):
         st.error("❌ Please enter your OpenAI API key")
     else:
         try:
-            # Create OpenAI client with minimal configuration
-            client = OpenAI(api_key=api_key)
+            # Basic client initialization with only the API key
+            client = OpenAI()
+            client.api_key = api_key
 
-            # Test with a simple completion request
+            # Simple test request
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": "Hello"}],
-                max_tokens=10
+                messages=[{"role": "user", "content": "Test"}]
             )
 
-            st.success("✅ Successfully connected to OpenAI API!")
-            st.write("Response:", response.choices[0].message.content)
+            if response:
+                st.success("✅ Successfully connected to OpenAI API!")
+                st.write("Test response received:", response.choices[0].message.content)
 
         except Exception as e:
-            st.error("❌ Connection failed")
             error_msg = str(e)
+            st.error("❌ Connection failed")
             st.error(f"Error details: {error_msg}")
 
-            # Provide more specific guidance based on the error
-            if "proxy" in error_msg.lower() or "proxies" in error_msg.lower():
-                st.info("💡 The connection might be blocked. Try using a different network connection or contact your network administrator.")
-            elif "invalid" in error_msg.lower() and "api" in error_msg.lower():
-                st.info("💡 Please check if your API key is valid")
-            else:
-                st.info("💡 Check your network connection and try again")
+            # Provide helpful guidance
+            st.info("💡 Tips for troubleshooting:")
+            st.markdown("""
+            1. Verify your API key is correct and active
+            2. Check your internet connection
+            3. Try accessing api.openai.com directly in your browser
+            """)
