@@ -15,16 +15,13 @@ if st.button("Initialize OpenAI Client"):
     else:
         try:
             # Create OpenAI client with minimal configuration
-            client = OpenAI(
-                api_key=api_key,
-                base_url="https://api.openai.com/v1"  # Explicitly set the base URL
-            )
+            client = OpenAI(api_key=api_key)
 
             # Test with a simple completion request
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": "Hello"}],
-                max_tokens=10  # Limit response size for quick testing
+                max_tokens=10
             )
 
             st.success("✅ Successfully connected to OpenAI API!")
@@ -36,9 +33,9 @@ if st.button("Initialize OpenAI Client"):
             st.error(f"Error details: {error_msg}")
 
             # Provide more specific guidance based on the error
-            if "proxies" in error_msg.lower():
-                st.info("💡 Try clearing your browser cache and refreshing the page")
+            if "proxy" in error_msg.lower() or "proxies" in error_msg.lower():
+                st.info("💡 The connection might be blocked. Try using a different network connection or contact your network administrator.")
             elif "invalid" in error_msg.lower() and "api" in error_msg.lower():
                 st.info("💡 Please check if your API key is valid")
             else:
-                st.info("💡 Make sure you have a stable internet connection")
+                st.info("💡 Check your network connection and try again")
