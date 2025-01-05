@@ -25,7 +25,7 @@ ROLES = [
     "Individual Contributor",
     "Manager",
     "Client Manager",
-    "Selling Partner or Principal",
+    "Selling Partner/Principal",
     "Practice Leader"
 ]
 
@@ -37,6 +37,18 @@ Upload your resume for instant AI analysis that includes:
 - Key strengths and improvement areas
 - Actionable suggestions for enhancement
 """)
+
+# Initialize AI analyzer early to catch any connection issues
+try:
+    analyzer = ResumeAnalyzer()
+    # Test connection
+    if not analyzer.test_connection():
+        st.error("Unable to connect to AI service. Please try again later.")
+        st.stop()
+    logger.info("Successfully connected to OpenAI service")
+except Exception as e:
+    st.error(f"Error initializing AI service: {str(e)}")
+    st.stop()
 
 # Contact Information Form
 with st.form("contact_info"):
@@ -69,63 +81,29 @@ if submit_button and uploaded_file and name and email and role:
             with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
                 tmp_file.write(uploaded_file.getvalue())
                 tmp_file_path = tmp_file.name
-                logger.info(f"Saved uploaded file to: {tmp_file_path}")
 
                 try:
                     # Parse resume
                     parser = ResumeParser()
                     parsed_content = parser.parse_docx(tmp_file_path)
-                    logger.info("Successfully parsed resume content")
 
-                    # Initialize AI analyzer
-                    try:
-                        analyzer = ResumeAnalyzer()
-                        logger.info("Successfully initialized ResumeAnalyzer")
+                    # Add user context to parsed content
+                    parsed_content['user_context'] = {
+                        'name': name,
+                        'email': email,
+                        'phone': phone,
+                        'role': role
+                    }
 
-                        # Add user context to parsed content
-                        parsed_content['user_context'] = {
-                            'name': name,
-                            'email': email,
-                            'phone': phone,
-                            'role': role
-                        }
-
-                        # Get analysis
-                        try:
-                            analysis_results = analyzer.analyze_resume(parsed_content)
-                            st.session_state.analysis_results = analysis_results
-                            logger.info("Resume analysis completed successfully")
-                        except ValueError as e:
-                            logger.error(f"Analysis Error: {str(e)}")
-                            st.error("Error analyzing resume. Please ensure your resume is properly formatted and try again.")
-                            if os.path.exists(tmp_file_path):
-                                os.unlink(tmp_file_path)
-                            st.stop()
-                        except Exception as e:
-                            logger.error(f"Unexpected error during analysis: {str(e)}")
-                            st.error("An unexpected error occurred during analysis. Please try again later.")
-                            if os.path.exists(tmp_file_path):
-                                os.unlink(tmp_file_path)
-                            st.stop()
-
-                    except ValueError as ve:
-                        logger.error(f"API Key Error: {str(ve)}")
-                        st.error("Unable to access AI analysis service. Please try again later or contact support.")
-                        if os.path.exists(tmp_file_path):
-                            os.unlink(tmp_file_path)
-                        st.stop()
-                    except Exception as e:
-                        logger.error(f"Analyzer Error: {str(e)}")
-                        st.error("Unable to initialize analysis service. Please try again later.")
-                        if os.path.exists(tmp_file_path):
-                            os.unlink(tmp_file_path)
-                        st.stop()
+                    # Get analysis
+                    analysis_results = analyzer.analyze_resume(parsed_content)
+                    st.session_state.analysis_results = analysis_results
 
                     # Cleanup temporary file
                     os.unlink(tmp_file_path)
 
                 except Exception as e:
-                    logger.error(f"Error during resume parsing: {str(e)}")
+                    logger.error(f"Error processing resume: {str(e)}")
                     st.error("Error processing resume. Please ensure you've uploaded a valid DOCX file.")
                     if os.path.exists(tmp_file_path):
                         os.unlink(tmp_file_path)

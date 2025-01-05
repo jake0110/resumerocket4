@@ -1,6 +1,6 @@
 import os
 import logging
-from openai import OpenAI, OpenAIError
+from openai import OpenAI
 from typing import Dict, Any
 import json
 
@@ -11,51 +11,57 @@ class ResumeAnalyzer:
 
     def __init__(self):
         """Initialize the OpenAI client with API key from environment."""
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
+
         try:
-            api_key = os.getenv("OPENAI_API_KEY")
-            if not api_key:
-                logger.error("OpenAI API key not found in environment variables")
-                raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
-
-            logger.info("Initializing OpenAI client...")
-            self.client = OpenAI()  # It will automatically use the environment variable
+            self.client = OpenAI(
+                api_key=self.api_key
+            )
             self.model = "gpt-4-turbo-preview"
-            logger.info("OpenAI client initialized successfully")
-
-        except OpenAIError as e:
-            logger.error(f"OpenAI API Error: {str(e)}", exc_info=True)
-            raise ValueError(f"Failed to initialize OpenAI client: {str(e)}")
         except Exception as e:
-            logger.error(f"Unexpected error initializing OpenAI client: {str(e)}", exc_info=True)
-            raise
+            logger.error(f"Failed to initialize OpenAI client: {str(e)}")
+            raise ValueError(f"Unable to initialize AI service: {str(e)}")
+
+    def test_connection(self) -> bool:
+        """Test the OpenAI connection with a simple query."""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Return a simple JSON response with the key 'status' and value 'connected'"
+                    }
+                ],
+                response_format={"type": "json_object"}
+            )
+            result = json.loads(response.choices[0].message.content)
+            return result.get('status') == 'connected'
+        except Exception as e:
+            logger.error(f"Connection test failed: {str(e)}")
+            return False
 
     def analyze_resume(self, resume_data: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze resume content using GPT and provide structured feedback."""
         try:
-            prompt = self._construct_analysis_prompt(resume_data)
-            logger.info("Generated analysis prompt")
+            # First test the connection
+            if not self.test_connection():
+                raise ValueError("Unable to connect to OpenAI service")
 
-            logger.debug("Sending request to OpenAI API...")
+            prompt = self._construct_analysis_prompt(resume_data)
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {
                         "role": "system",
-                        "content": """You are a resume analyst. Provide a basic analysis with:
-                        - A score from 1-10
-                        - 2-3 key strengths
-                        - 2-3 areas for improvement
-                        - 2-3 specific suggestions
-                        - A brief overall analysis
-
-                        Respond in JSON format:
-                        {
-                            "overall_score": number,
-                            "strengths": [string],
-                            "weaknesses": [string],
-                            "suggestions": [string],
-                            "analysis": "string"
-                        }"""
+                        "content": """You are a resume analyst. Analyze the provided resume and return a JSON object with:
+                        - overall_score: number between 1-10
+                        - strengths: array of 2-3 key strengths
+                        - weaknesses: array of 2-3 areas for improvement
+                        - suggestions: array of 2-3 specific suggestions
+                        - analysis: string containing brief overall analysis"""
                     },
                     {
                         "role": "user",
@@ -64,17 +70,13 @@ class ResumeAnalyzer:
                 ],
                 response_format={"type": "json_object"}
             )
-            logger.info("Successfully received response from OpenAI API")
 
             analysis = json.loads(response.choices[0].message.content)
             return analysis
 
-        except OpenAIError as e:
-            logger.error(f"OpenAI API Error during analysis: {str(e)}", exc_info=True)
-            raise ValueError(f"Error during resume analysis: {str(e)}")
         except Exception as e:
-            logger.error(f"Unexpected error during analysis: {str(e)}", exc_info=True)
-            raise
+            logger.error(f"Error analyzing resume: {str(e)}")
+            raise ValueError(f"Unable to complete resume analysis: {str(e)}")
 
     def _construct_analysis_prompt(self, resume_data: Dict[str, Any]) -> str:
         """Construct analysis prompt with resume content."""
@@ -118,5 +120,5 @@ class ResumeAnalyzer:
             return "\n".join(sections)
 
         except Exception as e:
-            logger.error(f"Error constructing analysis prompt: {str(e)}", exc_info=True)
+            logger.error(f"Error constructing analysis prompt: {str(e)}")
             raise ValueError(f"Failed to construct analysis prompt: {str(e)}")
