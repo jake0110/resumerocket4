@@ -1,5 +1,6 @@
 import streamlit as st
-from openai import OpenAI
+import requests
+import json
 
 st.title("OpenAI Connection Test")
 
@@ -14,29 +15,49 @@ if st.button("Initialize OpenAI Client"):
         st.error("❌ Please enter your OpenAI API key")
     else:
         try:
-            # Basic client initialization with only the API key
-            client = OpenAI()
-            client.api_key = api_key
+            # Direct API request without using the OpenAI client
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
 
-            # Simple test request
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": "Test"}]
+            data = {
+                "model": "gpt-3.5-turbo",
+                "messages": [{"role": "user", "content": "Test"}],
+                "max_tokens": 10
+            }
+
+            response = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=10
             )
 
-            if response:
+            if response.status_code == 200:
+                result = response.json()
                 st.success("✅ Successfully connected to OpenAI API!")
-                st.write("Test response received:", response.choices[0].message.content)
+                st.write("Test response received:", result['choices'][0]['message']['content'])
+            else:
+                st.error("❌ API request failed")
+                st.error(f"Status code: {response.status_code}")
+                st.error(f"Error details: {response.text}")
 
-        except Exception as e:
-            error_msg = str(e)
+        except requests.exceptions.RequestException as e:
             st.error("❌ Connection failed")
-            st.error(f"Error details: {error_msg}")
+            error_msg = str(e)
+            st.error(f"Network error: {error_msg}")
 
             # Provide helpful guidance
-            st.info("💡 Tips for troubleshooting:")
+            st.info("💡 Network Troubleshooting Tips:")
             st.markdown("""
-            1. Verify your API key is correct and active
-            2. Check your internet connection
-            3. Try accessing api.openai.com directly in your browser
+            1. Check if you can access api.openai.com in your browser
+            2. Verify your internet connection
+            3. Try using a different network if possible
+            4. If you're behind a corporate network, check with your IT department
             """)
+
+        except Exception as e:
+            st.error("❌ Unexpected error")
+            st.error(f"Error details: {str(e)}")
+            st.info("💡 Please verify your API key and try again")
