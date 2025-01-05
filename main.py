@@ -6,28 +6,38 @@ import logging
 import sys
 from pathlib import Path
 
-# Add the project root to Python path
-project_root = Path(__file__).parent
-sys.path.append(str(project_root))
-
 # Configure detailed logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,  # Change to DEBUG for more verbose logging
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(sys.stdout)
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('app.log')
     ]
 )
 logger = logging.getLogger(__name__)
 
-# Import local modules
-from utils.pdf_generator import generate_pdf
-from utils.resume_parser import ResumeParser
-from components.preview import render_preview
-from components.forms import render_personal_info, render_education, render_experience, render_skills
+# Add the project root to Python path
+project_root = Path(__file__).parent.absolute()
+sys.path.append(str(project_root))
+logger.debug(f"Added {project_root} to Python path")
+logger.debug(f"Current Python path: {sys.path}")
+
+try:
+    # Import local modules
+    logger.debug("Attempting to import local modules...")
+    from utils.pdf_generator import generate_pdf
+    from utils.resume_parser import ResumeParser
+    from components.preview import render_preview
+    from components.forms import render_personal_info, render_education, render_experience, render_skills
+    logger.debug("Successfully imported all local modules")
+except Exception as e:
+    logger.error(f"Failed to import modules: {str(e)}", exc_info=True)
+    raise
 
 def main():
     try:
+        logger.info("Starting Resume Builder application")
         st.set_page_config(
             page_title="Resume Builder",
             page_icon="📄",
@@ -46,9 +56,12 @@ def main():
         if 'parsed_resume' not in st.session_state:
             st.session_state.parsed_resume = None
 
+        logger.debug("Session state initialized")
+
         # Load custom CSS
         try:
-            css_path = Path(__file__).parent / 'styles' / 'custom.css'
+            css_path = project_root / 'styles' / 'custom.css'
+            logger.debug(f"Loading CSS from {css_path}")
             with open(css_path) as f:
                 st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
         except Exception as e:
@@ -76,16 +89,16 @@ def main():
                     with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
                         tmp_file.write(uploaded_file.getvalue())
                         tmp_file_path = tmp_file.name
-                        logger.info(f"Saved uploaded file to {tmp_file_path}")
+                        logger.debug(f"Saved uploaded file to {tmp_file_path}")
 
                     # Parse the resume
                     parser = ResumeParser()
                     parsed_content = parser.parse_docx(tmp_file_path)
                     logger.info("Successfully parsed resume content")
+                    logger.debug(f"Parsed content: {parsed_content}")
 
                     # Store parsed content in session state
                     st.session_state.parsed_resume = parsed_content
-                    logger.info("Stored parsed content in session state")
 
                     # Update form fields with parsed content if available
                     if parsed_content.get('contact'):
@@ -95,22 +108,17 @@ def main():
                     if parsed_content.get('experience'):
                         st.session_state.experience = parsed_content['experience']
                     if parsed_content.get('skills'):
-                        st.session_state.skills = [
-                            skill for category in parsed_content['skills'].values()
-                            for skill in category
-                        ]
-                    logger.info("Updated session state with parsed content")
+                        st.session_state.skills = parsed_content['skills']
 
-                    # Display parsed sections
-                    with st.expander("📄 Parsed Resume Content", expanded=True):
-                        st.json(parsed_content)
+                    # Display success message
+                    st.success("✅ Resume successfully parsed! Form fields have been updated.")
 
                     # Clean up temporary file
                     os.unlink(tmp_file_path)
-                    logger.info("Cleaned up temporary file")
+                    logger.debug("Cleaned up temporary file")
 
                 except Exception as e:
-                    logger.error(f"Error processing resume: {str(e)}")
+                    logger.error(f"Error processing resume: {str(e)}", exc_info=True)
                     st.error(f"Error processing resume: {str(e)}")
 
             # Tabs for different sections
@@ -151,10 +159,11 @@ def main():
                     href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="resume.pdf">Download PDF</a>'
                     st.markdown(href, unsafe_allow_html=True)
                 except Exception as e:
+                    logger.error(f"Error generating PDF: {str(e)}", exc_info=True)
                     st.error(f"Error generating PDF: {str(e)}")
 
     except Exception as e:
-        logger.error(f"Application error: {str(e)}")
+        logger.error(f"Application error: {str(e)}", exc_info=True)
         st.error(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":

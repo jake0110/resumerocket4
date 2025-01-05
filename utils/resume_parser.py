@@ -1,10 +1,5 @@
-try:
-    from docx import Document
-except ImportError as e:
-    raise ImportError(f"Failed to import python-docx. Please ensure it's installed correctly: {str(e)}")
-
-from typing import Dict, List, Optional, Tuple
 import logging
+from typing import Dict, List, Optional, Tuple
 import re
 from datetime import datetime
 import json
@@ -13,13 +8,18 @@ import json
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+try:
+    from docx import Document
+except ImportError as e:
+    logger.error(f"Failed to import python-docx: {str(e)}")
+    raise ImportError("python-docx is required but not properly installed. Please install it using 'pip install python-docx'")
+
 class ResumeParser:
     """Advanced resume parsing with intelligent section detection and structured output."""
 
     def __init__(self):
         """Initialize the parser with enhanced section detection patterns."""
         logger.info("Initializing ResumeParser")
-        self.document = None
         self.section_headers = {
             'contact': [
                 r'contact\s*info(rmation)?',
@@ -47,47 +47,95 @@ class ResumeParser:
                 r'proficiencies'
             ]
         }
-        logger.info("ResumeParser initialized successfully")
 
-    def _normalize_text(self, text: str) -> str:
-        """Normalize text with enhanced character handling."""
-        if not text:
-            return ""
-        text = text.lower().strip()
-        text = ' '.join(text.split())
-        text = re.sub(r'[•●○▪▫◦⦿⦾⭐►▻▸▹➜➤➢➣➪➱➾]', '•', text)
-        text = re.sub(r'[^\w\s.,;:•\-()]', '', text)
-        return text
-
-    def _identify_section(self, paragraph: str) -> Optional[str]:
+    def parse_docx(self, file_path: str) -> Dict[str, any]:
         """
-        Enhanced section identification with regex pattern matching.
+        Parse DOCX resume file and extract structured information.
 
         Args:
-            paragraph (str): Paragraph text to analyze
+            file_path (str): Path to the DOCX file
 
         Returns:
-            Optional[str]: Section name if identified, None otherwise
+            Dict[str, any]: Structured resume data
         """
-        normalized_text = self._normalize_text(paragraph)
+        logger.info(f"Attempting to parse DOCX file: {file_path}")
+
+        try:
+            doc = Document(file_path)
+
+            # Initialize sections dictionary
+            sections = {
+                'contact': [],
+                'education': [],
+                'experience': [],
+                'skills': [],
+                'unknown': []
+            }
+
+            current_section = None
+
+            # First pass: Collect content by section
+            for paragraph in doc.paragraphs:
+                text = paragraph.text.strip()
+                if not text:
+                    continue
+
+                # Check if this paragraph is a section header
+                section = self._identify_section(text)
+                if section:
+                    current_section = section
+                    continue
+
+                # Add content to appropriate section
+                if current_section:
+                    sections[current_section].append(text)
+                else:
+                    sections['unknown'].append(text)
+
+            # Process sections with specialized extractors
+            parsed_data = {
+                'contact': self._extract_contact_info('\n'.join(sections['contact'])),
+                'education': self._extract_education(sections['education']),
+                'experience': self._extract_experience(sections['experience']),
+                'skills': self._extract_skills(sections['skills']),
+                'metadata': {
+                    'parsed_at': datetime.now().isoformat(),
+                    'sections_found': [k for k, v in sections.items() if v and k != 'unknown']
+                }
+            }
+
+            logger.info(f"Successfully parsed resume with sections: {parsed_data['metadata']['sections_found']}")
+            return parsed_data
+
+        except Exception as e:
+            logger.error(f"Error parsing DOCX file: {str(e)}")
+            raise
+
+    def _normalize_text(self, text: str) -> str:
+        """Normalize text for consistent processing."""
+        if not text:
+            return ""
+        # Convert to lowercase and strip whitespace
+        text = text.lower().strip()
+        # Replace multiple spaces with single space
+        text = ' '.join(text.split())
+        # Normalize bullet points
+        text = re.sub(r'[•●○▪▫◦⦿⦾⭐►▻▸▹➜➤➢➣➪➱➾]', '•', text)
+        return text
+
+    def _identify_section(self, text: str) -> Optional[str]:
+        """Identify section from text using regex patterns."""
+        normalized_text = self._normalize_text(text)
 
         for section, patterns in self.section_headers.items():
             for pattern in patterns:
                 if re.search(pattern, normalized_text):
-                    logger.info(f"Identified section: {section} from text: {normalized_text}")
+                    logger.info(f"Identified section: {section}")
                     return section
         return None
 
     def _extract_contact_info(self, text: str) -> Dict[str, str]:
-        """
-        Extract contact information using regex patterns.
-
-        Args:
-            text (str): Text to extract contact info from
-
-        Returns:
-            Dict[str, str]: Extracted contact information
-        """
+        """Extract contact information using regex patterns."""
         contact_info = {
             'name': '',
             'email': '',
@@ -95,19 +143,19 @@ class ResumeParser:
             'location': ''
         }
 
-        # Email pattern
+        # Extract email
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         email_match = re.search(email_pattern, text)
         if email_match:
             contact_info['email'] = email_match.group()
 
-        # Phone pattern
+        # Extract phone
         phone_pattern = r'\b(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b'
         phone_match = re.search(phone_pattern, text)
         if phone_match:
             contact_info['phone'] = phone_match.group()
 
-        # Location pattern (City, State/Province)
+        # Extract location (City, State)
         location_pattern = r'\b[A-Za-z\s]+,\s*[A-Za-z\s]+\b'
         location_match = re.search(location_pattern, text)
         if location_match:
@@ -116,86 +164,68 @@ class ResumeParser:
         return contact_info
 
     def _extract_education(self, paragraphs: List[str]) -> List[Dict[str, str]]:
-        """
-        Extract education information with degree and date detection.
-
-        Args:
-            paragraphs (List[str]): Education section paragraphs
-
-        Returns:
-            List[Dict[str, str]]: List of education entries
-        """
-        education = []
-        current_entry = {}
-
-        degree_patterns = [
-            r'\b(?:B\.?S\.?|B\.?A\.?|M\.?S\.?|M\.?A\.?|Ph\.?D\.?|M\.?B\.?A\.?)\b',
-            r'\b(?:Bachelor|Master|Doctor|Doctorate)\b'
-        ]
-
-        date_pattern = r'\b(19|20)\d{2}\b'
+        """Extract education information with enhanced pattern matching."""
+        education_entries = []
 
         for para in paragraphs:
-            if any(re.search(pattern, para, re.I) for pattern in degree_patterns):
-                if current_entry:
-                    education.append(current_entry)
-                current_entry = {
-                    'institution': '',
-                    'degree': '',
-                    'graduation_year': '',
-                    'field': ''
-                }
+            # Skip empty paragraphs
+            if not para.strip():
+                continue
 
-                # Extract degree
-                for pattern in degree_patterns:
-                    degree_match = re.search(pattern, para, re.I)
-                    if degree_match:
-                        current_entry['degree'] = degree_match.group()
-                        break
+            entry = {
+                'institution': '',
+                'degree': '',
+                'graduation_year': ''
+            }
 
-                # Extract year
-                year_match = re.search(date_pattern, para)
-                if year_match:
-                    current_entry['graduation_year'] = year_match.group()
+            # Extract year
+            year_match = re.search(r'\b(19|20)\d{2}\b', para)
+            if year_match:
+                entry['graduation_year'] = year_match.group()
 
-                # Extract institution (usually the first line)
-                current_entry['institution'] = re.sub(
-                    f"{current_entry['degree']}|{current_entry['graduation_year']}", 
-                    '', 
-                    para
-                ).strip()
+            # Extract degree
+            degree_patterns = [
+                r'\b(?:B\.?S\.?|B\.?A\.?|M\.?S\.?|M\.?A\.?|Ph\.?D\.?|M\.?B\.?A\.?)\b',
+                r'\b(?:Bachelor|Master|Doctor|Doctorate)\b'
+            ]
+            for pattern in degree_patterns:
+                degree_match = re.search(pattern, para, re.I)
+                if degree_match:
+                    entry['degree'] = degree_match.group()
+                    break
 
-        if current_entry:
-            education.append(current_entry)
+            # Institution is typically what remains after removing degree and year
+            entry['institution'] = re.sub(
+                f"{entry['degree']}|{entry['graduation_year']}", 
+                '', 
+                para
+            ).strip()
 
-        return education
+            if any(entry.values()):
+                education_entries.append(entry)
+
+        return education_entries
 
     def _extract_experience(self, paragraphs: List[str]) -> List[Dict[str, any]]:
-        """
-        Extract work experience with enhanced date and position detection.
-
-        Args:
-            paragraphs (List[str]): Experience section paragraphs
-
-        Returns:
-            List[Dict[str, any]]: List of experience entries
-        """
-        experience = []
-        current_entry = {}
-
-        date_pattern = r'\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s*(?:\d{4})'
+        """Extract work experience with detailed parsing."""
+        experiences = []
+        current_entry = None
 
         for para in paragraphs:
-            # New entry typically starts with company name and dates
+            if not para.strip():
+                continue
+
+            # Check if this is a new position (typically contains a date)
+            date_pattern = r'\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s*(?:\d{4})'
             if re.search(date_pattern, para):
                 if current_entry:
-                    experience.append(current_entry)
+                    experiences.append(current_entry)
+
                 current_entry = {
                     'company': '',
                     'position': '',
                     'duration': '',
-                    'description': [],
-                    'achievements': []
+                    'description': []
                 }
 
                 # Extract dates
@@ -207,132 +237,33 @@ class ResumeParser:
 
                 # Extract company and position
                 company_position = re.sub(date_pattern, '', para).strip()
-                parts = company_position.split('-')
-                if len(parts) >= 2:
+                if ' - ' in company_position:
+                    parts = company_position.split(' - ')
                     current_entry['company'] = parts[0].strip()
                     current_entry['position'] = parts[1].strip()
                 else:
                     current_entry['company'] = company_position
 
-            # Bullet points typically indicate responsibilities or achievements
-            elif '•' in para:
-                if current_entry:
-                    if any(word in para.lower() for word in ['achieved', 'increased', 'improved', 'reduced', 'led']):
-                        current_entry['achievements'].append(para.replace('•', '').strip())
-                    else:
-                        current_entry['description'].append(para.replace('•', '').strip())
+            elif current_entry and para.strip():
+                current_entry['description'].append(para.strip())
 
         if current_entry:
-            experience.append(current_entry)
+            experiences.append(current_entry)
 
-        return experience
+        return experiences
 
-    def _extract_skills(self, paragraphs: List[str]) -> Dict[str, List[str]]:
-        """
-        Extract and categorize skills.
-
-        Args:
-            paragraphs (List[str]): Skills section paragraphs
-
-        Returns:
-            Dict[str, List[str]]: Categorized skills
-        """
-        skills = {
-            'technical': [],
-            'soft': [],
-            'languages': [],
-            'tools': []
-        }
-
-        technical_indicators = ['programming', 'software', 'database', 'framework', 'technology']
-        soft_indicators = ['communication', 'leadership', 'management', 'teamwork', 'problem solving']
-        language_indicators = ['fluent in', 'native', 'bilingual', 'spoken', 'written']
-        tool_indicators = ['tools', 'platforms', 'applications', 'software']
+    def _extract_skills(self, paragraphs: List[str]) -> List[str]:
+        """Extract and normalize skills."""
+        skills = []
 
         for para in paragraphs:
-            skills_list = [s.strip() for s in re.split(r'[,;•]', para) if s.strip()]
+            # Split on common delimiters
+            skill_list = re.split(r'[,;•]', para)
+            # Clean and add non-empty skills
+            skills.extend([
+                skill.strip()
+                for skill in skill_list
+                if skill.strip()
+            ])
 
-            for skill in skills_list:
-                skill_lower = skill.lower()
-
-                # Categorize based on indicators
-                if any(ind in skill_lower for ind in technical_indicators):
-                    skills['technical'].append(skill)
-                elif any(ind in skill_lower for ind in soft_indicators):
-                    skills['soft'].append(skill)
-                elif any(ind in skill_lower for ind in language_indicators):
-                    skills['languages'].append(skill)
-                elif any(ind in skill_lower for ind in tool_indicators):
-                    skills['tools'].append(skill)
-                else:
-                    # Default to technical if no clear category
-                    skills['technical'].append(skill)
-
-        return skills
-
-    def parse_docx(self, file_path: str) -> Dict[str, any]:
-        """Parse DOCX resume with enhanced section detection."""
-        if not file_path:
-            logger.error("File path is empty")
-            raise ValueError("File path cannot be empty")
-
-        try:
-            logger.info(f"Attempting to parse DOCX file: {file_path}")
-            self.document = Document(file_path)
-
-            sections_content = {
-                'contact': [],
-                'education': [],
-                'experience': [],
-                'skills': [],
-                'unknown': []
-            }
-
-            current_section = None
-
-            # First pass: Collect content by section
-            for paragraph in self.document.paragraphs:
-                text = paragraph.text.strip()
-                if not text:
-                    continue
-
-                # Check for section headers
-                section = self._identify_section(text)
-                if section:
-                    logger.info(f"Found section header: {section}")
-                    current_section = section
-                    continue
-
-                # Add content to appropriate section
-                if current_section:
-                    sections_content[current_section].append(text)
-                else:
-                    # Try to identify contact info
-                    if any(re.search(pattern, text.lower()) for pattern in 
-                          [r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
-                           r'\b(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b']):
-                        sections_content['contact'].append(text)
-                        logger.info("Found contact information outside of contact section")
-                    else:
-                        sections_content['unknown'].append(text)
-
-            logger.info("Initial parsing completed. Processing sections...")
-
-            # Process sections with specialized extractors
-            parsed_content = {
-                'contact': self._extract_contact_info('\n'.join(sections_content['contact'])),
-                'education': self._extract_education(sections_content['education']),
-                'experience': self._extract_experience(sections_content['experience']),
-                'skills': self._extract_skills(sections_content['skills']),
-                'metadata': {
-                    'parsed_at': datetime.now().isoformat(),
-                    'sections_found': [k for k, v in sections_content.items() if v and k != 'unknown'],
-                }
-            }
-
-            logger.info(f"Successfully parsed resume with sections: {parsed_content['metadata']['sections_found']}")
-            return parsed_content
-
-        except Exception as e:
-            logger.error(f"Error parsing DOCX file: {str(e)}")
-            raise
+        return list(set(skills))  # Remove duplicates

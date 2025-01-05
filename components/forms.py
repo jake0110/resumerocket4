@@ -2,6 +2,9 @@ import streamlit as st
 import os
 import tempfile
 from utils.resume_parser import ResumeParser
+import logging
+
+logger = logging.getLogger(__name__)
 
 def render_personal_info():
     with st.form("personal_info_form"):
@@ -29,10 +32,12 @@ def render_personal_info():
                         with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
                             tmp_file.write(uploaded_file.getvalue())
                             tmp_file_path = tmp_file.name
+                            logger.debug(f"Saved uploaded file to {tmp_file_path}")
 
                             # Parse the resume
                             parser = ResumeParser()
                             parsed_content = parser.parse_docx(tmp_file_path)
+                            logger.info("Successfully parsed resume content")
 
                             # Update session state with parsed content
                             if parsed_content.get('contact'):
@@ -42,17 +47,16 @@ def render_personal_info():
                             if parsed_content.get('experience'):
                                 st.session_state.experience = parsed_content['experience']
                             if parsed_content.get('skills'):
-                                st.session_state.skills = [
-                                    skill for category in parsed_content['skills'].values() 
-                                    for skill in category if isinstance(skill, str)
-                                ]
+                                st.session_state.skills = parsed_content['skills']
 
                             st.success("✅ Resume successfully parsed! Form fields have been updated.")
 
                             # Clean up temporary file
                             os.unlink(tmp_file_path)
+                            logger.debug("Cleaned up temporary file")
 
                     except Exception as e:
+                        logger.error(f"Error parsing resume: {str(e)}", exc_info=True)
                         st.error(f"Error parsing resume: {str(e)}")
 
         # Manual input fields as fallback
@@ -85,26 +89,26 @@ def render_personal_info():
 
 def render_education():
     st.subheader("Education")
-    
+
     if st.button("Add Education"):
         st.session_state.education.append({})
 
     for i, edu in enumerate(st.session_state.education):
         with st.form(f"education_form_{i}"):
             st.write(f"Education #{i+1}")
-            
+
             institution = st.text_input(
                 "Institution",
                 value=edu.get('institution', ''),
                 key=f"institution_{i}"
             )
-            
+
             degree = st.text_input(
                 "Degree",
                 value=edu.get('degree', ''),
                 key=f"degree_{i}"
             )
-            
+
             graduation_year = st.text_input(
                 "Graduation Year",
                 value=edu.get('graduation_year', ''),
@@ -120,7 +124,7 @@ def render_education():
                         'graduation_year': graduation_year
                     }
                     st.success(f"Education #{i+1} saved!")
-            
+
             with col2:
                 if st.form_submit_button("Remove"):
                     st.session_state.education.pop(i)
@@ -128,35 +132,35 @@ def render_education():
 
 def render_experience():
     st.subheader("Professional Experience")
-    
+
     if st.button("Add Experience"):
         st.session_state.experience.append({})
 
     for i, exp in enumerate(st.session_state.experience):
         with st.form(f"experience_form_{i}"):
             st.write(f"Experience #{i+1}")
-            
+
             company = st.text_input(
                 "Company",
                 value=exp.get('company', ''),
                 key=f"company_{i}"
             )
-            
+
             position = st.text_input(
                 "Position",
                 value=exp.get('position', ''),
                 key=f"position_{i}"
             )
-            
+
             duration = st.text_input(
                 "Duration",
                 value=exp.get('duration', ''),
                 key=f"duration_{i}"
             )
-            
+
             description = st.text_area(
                 "Description",
-                value=exp.get('description', ''),
+                value=exp.get('description', '') if isinstance(exp.get('description'), str) else '\n'.join(exp.get('description', [])),
                 key=f"description_{i}"
             )
 
@@ -167,10 +171,10 @@ def render_experience():
                         'company': company,
                         'position': position,
                         'duration': duration,
-                        'description': description
+                        'description': description.split('\n') if description else []
                     }
                     st.success(f"Experience #{i+1} saved!")
-            
+
             with col2:
                 if st.form_submit_button("Remove"):
                     st.session_state.experience.pop(i)
@@ -178,16 +182,16 @@ def render_experience():
 
 def render_skills():
     st.subheader("Skills")
-    
+
     # Convert skills list to string for input
-    current_skills = ", ".join(st.session_state.skills)
-    
+    current_skills = ", ".join(st.session_state.skills) if isinstance(st.session_state.skills, list) else ""
+
     with st.form("skills_form"):
         skills_input = st.text_area(
             "Enter your skills (comma-separated)",
             value=current_skills
         )
-        
+
         if st.form_submit_button("Save Skills"):
             # Convert input string to list and clean up
             skills_list = [
