@@ -1,8 +1,13 @@
 import streamlit as st
 import tempfile
 import os
+import logging
 from utils.resume_parser import ResumeParser
 from utils.ai_analyzer import ResumeAnalyzer
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize Streamlit app
 st.set_page_config(
@@ -15,13 +20,12 @@ st.set_page_config(
 if 'analysis_results' not in st.session_state:
     st.session_state.analysis_results = {}
 
-# Available roles for selection
+# Available roles for selection - Updated with exact specifications
 ROLES = [
     "Individual Contributor",
     "Manager",
     "Client Manager",
-    "Business Development Partner",
-    "Senior Manager",
+    "Selling Partner or Principal",
     "Practice Leader"
 ]
 
@@ -61,32 +65,55 @@ with st.form("contact_info"):
 if submit_button and uploaded_file and name and email and role:
     try:
         with st.spinner("Analyzing your resume..."):
+            # Process the uploaded file
             with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
                 tmp_file.write(uploaded_file.getvalue())
                 tmp_file_path = tmp_file.name
+                logger.info(f"Saved uploaded file to: {tmp_file_path}")
 
-                # Process resume
-                parser = ResumeParser()
-                analyzer = ResumeAnalyzer()
-                parsed_content = parser.parse_docx(tmp_file_path)
+                try:
+                    # Parse resume
+                    parser = ResumeParser()
+                    parsed_content = parser.parse_docx(tmp_file_path)
+                    logger.info("Successfully parsed resume content")
 
-                # Add user context to parsed content
-                parsed_content['user_context'] = {
-                    'name': name,
-                    'email': email,
-                    'phone': phone,
-                    'role': role
-                }
+                    # Initialize AI analyzer
+                    try:
+                        analyzer = ResumeAnalyzer()
+                        logger.info("Successfully initialized ResumeAnalyzer")
+                    except Exception as e:
+                        logger.error(f"Failed to initialize ResumeAnalyzer: {str(e)}")
+                        st.error("Unable to initialize AI analysis service. Please try again later.")
+                        if os.path.exists(tmp_file_path):
+                            os.unlink(tmp_file_path)
+                        st.stop()
 
-                # Get analysis
-                analysis_results = analyzer.analyze_resume(parsed_content)
-                st.session_state.analysis_results = analysis_results
+                    # Add user context to parsed content
+                    parsed_content['user_context'] = {
+                        'name': name,
+                        'email': email,
+                        'phone': phone,
+                        'role': role
+                    }
 
-                # Cleanup
-                os.unlink(tmp_file_path)
+                    # Get analysis
+                    analysis_results = analyzer.analyze_resume(parsed_content)
+                    st.session_state.analysis_results = analysis_results
+                    logger.info("Resume analysis completed successfully")
+
+                    # Cleanup temporary file
+                    os.unlink(tmp_file_path)
+
+                except Exception as e:
+                    logger.error(f"Error during resume analysis: {str(e)}")
+                    st.error(f"Error analyzing resume: {str(e)}")
+                    if os.path.exists(tmp_file_path):
+                        os.unlink(tmp_file_path)
 
     except Exception as e:
-        st.error(f"Error analyzing resume: {str(e)}")
+        logger.error(f"Unexpected error during analysis: {str(e)}")
+        st.error("An unexpected error occurred. Please try again.")
+
 elif submit_button:
     if not name:
         st.error("Please enter your name")
@@ -99,30 +126,35 @@ elif submit_button:
 
 # Display results
 if st.session_state.analysis_results:
-    results = st.session_state.analysis_results
+    try:
+        results = st.session_state.analysis_results
 
-    st.header("Analysis Results")
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        st.metric("Overall Score", f"{results.get('overall_score', 0)}/10")
-    with col2:
-        progress = float(results.get('overall_score', 0)) / 10
-        st.progress(progress)
+        st.header("Analysis Results")
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            st.metric("Overall Score", f"{results.get('overall_score', 0)}/10")
+        with col2:
+            progress = float(results.get('overall_score', 0)) / 10
+            st.progress(progress)
 
-    st.subheader("📊 Detailed Analysis")
-    st.write(results.get('analysis', ''))
+        st.subheader("📊 Detailed Analysis")
+        st.write(results.get('analysis', ''))
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("✅ Key Strengths")
-        for strength in results.get('strengths', []):
-            st.markdown(f"- {strength}")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("✅ Key Strengths")
+            for strength in results.get('strengths', []):
+                st.markdown(f"- {strength}")
 
-    with col2:
-        st.subheader("🎯 Areas for Improvement")
-        for weakness in results.get('weaknesses', []):
-            st.markdown(f"- {weakness}")
+        with col2:
+            st.subheader("🎯 Areas for Improvement")
+            for weakness in results.get('weaknesses', []):
+                st.markdown(f"- {weakness}")
 
-    st.subheader("📈 Recommended Actions")
-    for suggestion in results.get('suggestions', []):
-        st.markdown(f"- {suggestion}")
+        st.subheader("📈 Recommended Actions")
+        for suggestion in results.get('suggestions', []):
+            st.markdown(f"- {suggestion}")
+
+    except Exception as e:
+        logger.error(f"Error displaying results: {str(e)}")
+        st.error("Error displaying analysis results")
