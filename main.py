@@ -3,29 +3,51 @@ import tempfile
 import os
 import base64
 import logging
+import sys
+from pathlib import Path
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Add the project root to Python path
+project_root = Path(__file__).parent
+sys.path.append(str(project_root))
+
+# Configure detailed logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
 logger = logging.getLogger(__name__)
 
-# Import local modules after logging setup
+# Import local modules with detailed error handling
 try:
+    logger.info(f"Python path: {sys.path}")
+    logger.info("Attempting to import local modules...")
     from utils.pdf_generator import generate_pdf
+    logger.info("Successfully imported pdf_generator")
     from utils.resume_parser import ResumeParser
+    logger.info("Successfully imported resume_parser")
     from components.forms import render_personal_info, render_education, render_experience, render_skills
+    logger.info("Successfully imported form components")
     from components.preview import render_preview
-    logger.info("Successfully imported all required modules")
+    logger.info("Successfully imported preview component")
+except ImportError as e:
+    logger.error(f"Failed to import required modules: {str(e)}")
+    logger.error(f"Current directory: {os.getcwd()}")
+    logger.error(f"Directory contents: {os.listdir('.')}")
+    raise
 except Exception as e:
-    logger.error(f"Error importing modules: {str(e)}")
+    logger.error(f"Unexpected error during imports: {str(e)}")
     raise
 
 def main():
     try:
+        logger.info("Initializing Streamlit application...")
         st.set_page_config(
             page_title="Resume Builder",
             page_icon="📄",
             layout="wide"
         )
+        logger.info("Page config set successfully")
 
         # Initialize session state
         if 'personal_info' not in st.session_state:
@@ -38,13 +60,17 @@ def main():
             st.session_state.skills = []
         if 'parsed_resume' not in st.session_state:
             st.session_state.parsed_resume = None
+        logger.info("Session state initialized")
 
         # Load custom CSS
         try:
-            with open('styles/custom.css') as f:
+            css_path = project_root / 'styles' / 'custom.css'
+            with open(css_path) as f:
                 st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-        except FileNotFoundError:
-            logger.warning("Custom styles not found. Using default styling.")
+                logger.info("Custom CSS loaded successfully")
+        except FileNotFoundError as e:
+            logger.warning(f"Custom styles not found at {css_path}: {str(e)}")
+            pass
 
         st.title("Professional Resume Builder")
 
@@ -63,6 +89,7 @@ def main():
 
             if uploaded_file is not None:
                 try:
+                    logger.info(f"Processing uploaded file: {uploaded_file.name}")
                     # Save uploaded file temporarily
                     with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
                         tmp_file.write(uploaded_file.getvalue())
@@ -74,16 +101,27 @@ def main():
                     parsed_content = parser.parse_docx(tmp_file_path)
                     logger.info("Successfully parsed resume content")
 
-                    # Store parsed content
+                    # Store parsed content in session state
                     st.session_state.parsed_resume = parsed_content
+                    logger.info("Stored parsed content in session state")
+
+                    # Update form fields with parsed content if available
+                    if parsed_content.get('contact'):
+                        st.session_state.personal_info = parsed_content['contact']
+                    if parsed_content.get('education'):
+                        st.session_state.education = parsed_content['education']
+                    if parsed_content.get('experience'):
+                        st.session_state.experience = parsed_content['experience']
+                    if parsed_content.get('skills'):
+                        st.session_state.skills = [
+                            skill for category in parsed_content['skills'].values()
+                            for skill in category
+                        ]
+                    logger.info("Updated session state with parsed content")
 
                     # Display parsed sections
                     with st.expander("📄 Parsed Resume Content", expanded=True):
-                        for section, content in parsed_content['sections'].items():
-                            if content and section != 'unknown':
-                                st.subheader(f"📌 {section.title()}")
-                                for item in content:
-                                    st.write(f"• {item}")
+                        st.json(parsed_content)
 
                     # Clean up temporary file
                     os.unlink(tmp_file_path)
