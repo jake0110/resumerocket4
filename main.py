@@ -29,14 +29,14 @@ def main():
             layout="wide"
         )
 
-        st.title("ResumeRocket5 - Resume Parser")
-        st.write("Upload your resume and get structured information with AI-powered analysis")
+        st.title("ResumeRocket5 - Resume Analyzer")
+        st.write("Upload your resume for intelligent analysis using Airparser and OpenAI")
 
         # File upload section with error handling
         uploaded_file = st.file_uploader(
             "Upload your resume",
-            type=['docx'],
-            help="Upload a Word document (.docx)"
+            type=['docx', 'pdf'],  # Added PDF support for Airparser
+            help="Upload a Word document (.docx) or PDF file"
         )
 
         if uploaded_file:
@@ -53,21 +53,23 @@ def main():
             tmp_file_path = None
             try:
                 # Save uploaded file temporarily
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
                     tmp_file.write(uploaded_file.getvalue())
                     tmp_file_path = tmp_file.name
                     logger.debug(f"Saved temporary file at: {tmp_file_path}")
 
                 st.success("Resume uploaded successfully!")
-                st.info("Parse functionality is currently being upgraded. Please check back soon for enhanced features.")
+                st.info("Your resume will be processed through Airparser for detailed analysis.")
 
-                # Display raw file information for debugging
-                with st.expander("Debug: File Information"):
-                    st.write({
-                        "Filename": uploaded_file.name,
-                        "File size": f"{file_size:.2f} MB",
-                        "File type": uploaded_file.type
-                    })
+                # Display file information for user reference
+                st.write({
+                    "Filename": uploaded_file.name,
+                    "File size": f"{file_size:.2f} MB",
+                    "File type": uploaded_file.type
+                })
+
+                # Here we'll add Zapier integration endpoint call
+                st.info("Processing through Airparser... This feature will be available soon.")
 
             except Exception as e:
                 error_msg = f"Error processing document: {str(e)}"
@@ -78,7 +80,7 @@ def main():
 
             finally:
                 # Cleanup temporary file
-                if tmp_file_path:
+                if tmp_file_path and os.path.exists(tmp_file_path):
                     try:
                         os.unlink(tmp_file_path)
                         logger.debug("Temporary file cleaned up")
