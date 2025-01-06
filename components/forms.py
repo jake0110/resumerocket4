@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import tempfile
 import logging
+from utils.resume_parser import process_resume
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +13,7 @@ def render_personal_info():
 
         # File upload section with better visual feedback
         st.markdown("### Resume Upload")
+        st.info("✨ We're transitioning to Airparser for enhanced resume parsing!")
         uploaded_file = st.file_uploader(
             "Upload your resume (DOCX or PDF)",
             type=['docx', 'pdf'],
@@ -34,9 +36,13 @@ def render_personal_info():
                             tmp_file_path = tmp_file.name
                             logger.debug(f"Saved uploaded file to {tmp_file_path}")
 
-                            # Placeholder for Airparser integration
-                            st.info("Your resume will be processed through Airparser soon!")
-                            st.info("Integration with Airparser via Zapier is under development.")
+                            # Process with Airparser integration
+                            result = process_resume(tmp_file_path)
+                            if result['status'] == 'error':
+                                st.error(result['message'])
+                            else:
+                                st.info("Your resume will be processed through Airparser soon!")
+                                st.info("Integration with Airparser via Zapier is under development.")
 
                             # Clean up temporary file
                             os.unlink(tmp_file_path)

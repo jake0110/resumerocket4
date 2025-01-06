@@ -3,6 +3,8 @@ import sys
 import tempfile
 import logging
 import traceback
+from openai import OpenAI, OpenAIError
+import streamlit as st
 
 # Configure logging
 logging.basicConfig(
@@ -15,22 +17,63 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-try:
-    import streamlit as st
-except ImportError as e:
-    logger.error(f"Failed to import streamlit: {str(e)}")
-    raise
+def test_openai_connection():
+    """Test OpenAI API connection."""
+    try:
+        api_key = st.text_input("Enter your OpenAI API Key", type="password", key="openai_api_key")
+        if api_key and st.button("Test OpenAI Connection"):
+            try:
+                if not api_key.startswith('sk-') or len(api_key) < 20:
+                    st.error("Invalid API key format. Please enter a valid OpenAI API key.")
+                    return False
+
+                client = OpenAI(api_key=api_key)
+                logger.info("Attempting to connect to OpenAI API")
+                st.info("Testing OpenAI API connection...")
+
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{
+                        "role": "user",
+                        "content": "Hello, this is a test message. Please respond with 'OpenAI connection successful!'"
+                    }],
+                    max_tokens=50
+                )
+                st.success(f"OpenAI API Response: {response.choices[0].message.content}")
+                logger.info("OpenAI API test successful")
+                return True
+            except OpenAIError as e:
+                error_msg = f"OpenAI API Error: {str(e)}"
+                logger.error(error_msg)
+                st.error(error_msg)
+                return False
+            except Exception as e:
+                error_msg = f"Unexpected error during OpenAI API test: {str(e)}"
+                logger.error(error_msg)
+                st.error(error_msg)
+                return False
+    except Exception as e:
+        error_msg = f"Error in test_openai_connection: {str(e)}"
+        logger.error(error_msg)
+        st.error(error_msg)
+        return False
 
 def main():
     try:
         logger.info("Starting ResumeRocket5 application")
         st.set_page_config(
-            page_title="ResumeRocket5 - Resume Parser",
+            page_title="ResumeRocket5 - Resume Analyzer",
             layout="wide"
         )
 
         st.title("ResumeRocket5 - Resume Analyzer")
         st.write("Upload your resume for intelligent analysis using Airparser and OpenAI")
+
+        # Add OpenAI test section
+        st.subheader("OpenAI API Test")
+        api_test_result = test_openai_connection()
+        if api_test_result:
+            st.success("✅ OpenAI API connection verified")
 
         # File upload section with error handling
         uploaded_file = st.file_uploader(
@@ -49,10 +92,9 @@ def main():
                 logger.warning(f"File size {file_size}MB exceeds limit")
                 return
 
-            # Initialize tmp_file_path as None
+            # Save uploaded file temporarily
             tmp_file_path = None
             try:
-                # Save uploaded file temporarily
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
                     tmp_file.write(uploaded_file.getvalue())
                     tmp_file_path = tmp_file.name
@@ -61,14 +103,13 @@ def main():
                 st.success("Resume uploaded successfully!")
                 st.info("Your resume will be processed through Airparser for detailed analysis.")
 
-                # Display file information for user reference
+                # Display file information
                 st.write({
                     "Filename": uploaded_file.name,
                     "File size": f"{file_size:.2f} MB",
                     "File type": uploaded_file.type
                 })
 
-                # Here we'll add Zapier integration endpoint call
                 st.info("Processing through Airparser... This feature will be available soon.")
 
             except Exception as e:
