@@ -17,7 +17,7 @@ def main():
     uploaded_file = st.file_uploader("Upload your resume", type=['docx'])
     output_format = st.selectbox(
         "Select output format",
-        ['JSON', 'CSV'],
+        ['JSON'],
         index=0
     )
 
@@ -35,30 +35,24 @@ def main():
                 # Display results in organized sections
                 st.subheader("Parsed Resume Data")
 
-                if output_format == 'JSON':
-                    # First display a clean summary
-                    st.write("### Contact Information")
-                    data = json.loads(parsed_data)
-                    cols = st.columns(2)
-                    with cols[0]:
-                        st.write("Name:", data['name'])
-                        st.write("Email:", data['email'])
-                        st.write("Phone:", data['phone'])
-                    with cols[1]:
-                        st.write("Location:", data['location'])
-                        st.write("LinkedIn:", data['linkedin'])
+                # Parse the JSON string into a Python dictionary
+                data = json.loads(parsed_data)
 
-                    st.write("### Most Recent Position")
-                    st.write("Company:", data['most_recent_company'])
-                    st.write("Title:", data['most_recent_title'])
-                    st.write("Dates:", data['most_recent_dates'])
+                # Display Contact Information
+                st.write("### Contact Information")
+                contact_info = data["Contact Information"]
+                st.write(f"**Name:** {contact_info['Name']}")
+                st.write(f"**Email:** {contact_info['Email']}")
+                st.write(f"**Phone:** {contact_info['Phone']}")
+                st.write(f"**Location:** {contact_info['Location']}")
+                st.write(f"**LinkedIn:** {contact_info['LinkedIn']}")
 
-                    # Then show the raw JSON for reference
-                    st.write("### Raw JSON Output")
-                    st.json(parsed_data)
-                else:  # CSV
-                    st.text("CSV Output:")
-                    st.code(parsed_data)
+                # Display Most Recent Position
+                st.write("### Most Recent Position")
+                position = data["Most Recent Position"]
+                st.write(f"**Company:** {position['Company']}")
+                st.write(f"**Title:** {position['Title']}")
+                st.write(f"**Dates:** {position['Dates']}")
 
                 # Clean up temporary file
                 os.unlink(tmp_file_path)
