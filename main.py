@@ -3,8 +3,6 @@ import sys
 import tempfile
 import logging
 import traceback
-import streamlit as st
-from utils.resume_parser import ResumeParser
 
 # Configure logging
 logging.basicConfig(
@@ -17,6 +15,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+try:
+    import streamlit as st
+except ImportError as e:
+    logger.error(f"Failed to import streamlit: {str(e)}")
+    raise
+
 def main():
     try:
         logger.info("Starting ResumeRocket5 application")
@@ -28,7 +32,7 @@ def main():
         st.title("ResumeRocket5 - Resume Parser")
         st.write("Upload your resume and get structured information with AI-powered analysis")
 
-        # File upload section with better error handling
+        # File upload section with error handling
         uploaded_file = st.file_uploader(
             "Upload your resume",
             type=['docx'],
@@ -54,63 +58,16 @@ def main():
                     tmp_file_path = tmp_file.name
                     logger.debug(f"Saved temporary file at: {tmp_file_path}")
 
-                # Initialize parser and parse document
-                parser = ResumeParser()
-                parsed_data = parser.parse_docx(tmp_file_path)
+                st.success("Resume uploaded successfully!")
+                st.info("Parse functionality is currently being upgraded. Please check back soon for enhanced features.")
 
-                if parsed_data:
-                    st.success("Resume successfully parsed!")
-
-                    # Display Contact Information
-                    st.subheader("Contact Information")
-                    contact_info = parsed_data.get('contact', {})
-                    missing_fields = []
-
-                    # Create columns for better layout
-                    col1, col2 = st.columns(2)
-
-                    with col1:
-                        # Name field
-                        if contact_info.get('name'):
-                            st.write(f"**Name:** {contact_info['name']}")
-                            logger.debug(f"Extracted name: {contact_info['name']}")
-                        else:
-                            missing_fields.append('name')
-
-                        # Email field
-                        if contact_info.get('email'):
-                            st.write(f"**Email:** {contact_info['email']}")
-                            logger.debug(f"Extracted email: {contact_info['email']}")
-                        else:
-                            missing_fields.append('email')
-
-                    with col2:
-                        # Phone field
-                        if contact_info.get('phone'):
-                            st.write(f"**Phone:** {contact_info['phone']}")
-                            logger.debug(f"Extracted phone: {contact_info['phone']}")
-                        else:
-                            missing_fields.append('phone')
-
-                        # Location field
-                        if contact_info.get('location'):
-                            st.write(f"**Location:** {contact_info['location']}")
-                            logger.debug(f"Extracted location: {contact_info['location']}")
-                        else:
-                            missing_fields.append('location')
-
-                    # Show missing fields warning with more details
-                    if missing_fields:
-                        warning_msg = "Some information could not be extracted: " + ", ".join(missing_fields)
-                        st.warning(warning_msg)
-                        logger.warning(f"Missing fields in contact info: {missing_fields}")
-
-                        # Provide guidance for missing fields
-                        st.info("💡 Tip: Make sure your resume includes these details in a clear format.")
-
-                    # Display parsed content for debugging (collapsible)
-                    with st.expander("Debug: View Parsed Content"):
-                        st.json(parsed_data)
+                # Display raw file information for debugging
+                with st.expander("Debug: File Information"):
+                    st.write({
+                        "Filename": uploaded_file.name,
+                        "File size": f"{file_size:.2f} MB",
+                        "File type": uploaded_file.type
+                    })
 
             except Exception as e:
                 error_msg = f"Error processing document: {str(e)}"
