@@ -38,7 +38,6 @@ def main():
     try:
         logger.info("Starting main application")
         initialize_session_state()
-        tmp_file_path = None
 
         # Basic page config
         st.set_page_config(
@@ -50,7 +49,7 @@ def main():
 
         # Main content
         st.title("ResumeRocket5 - Resume Parser")
-        st.write("Upload your resume to extract structured information.")
+        st.write("Upload your resume and get structured information with AI-powered analysis")
 
         # File upload section
         uploaded_file = st.file_uploader(
@@ -61,6 +60,12 @@ def main():
 
         if uploaded_file is not None:
             logger.info(f"File uploaded: {uploaded_file.name}")
+            file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Size in MB
+            logger.debug(f"File size: {file_size:.2f}MB")
+
+            if file_size > 10:
+                st.error("File size exceeds 10MB limit")
+                return
 
             try:
                 # Save uploaded file temporarily
@@ -71,37 +76,41 @@ def main():
 
                 # Initialize parser without OpenAI integration first
                 parser = ResumeParser()
+                logger.debug("Initialized ResumeParser")
 
                 with st.spinner("Parsing resume..."):
                     # Basic parsing without OpenAI
+                    logger.info("Starting resume parsing")
                     parsed_data = parser.parse_docx(tmp_file_path)
                     logger.info("Basic parsing completed")
 
                     # Display parsed content
                     if parsed_data:
-                        st.success("✅ Resume parsed successfully!")
+                        st.success("✅ Resume successfully parsed!")
+                        logger.debug(f"Parsed data: {parsed_data}")
 
                         if 'contact' in parsed_data:
                             st.subheader("Contact Information")
                             contact_info = parsed_data['contact']
-                            missing_fields = []
+                            logger.debug(f"Contact info: {contact_info}")
 
+                            # Check for missing fields
+                            missing_fields = []
                             for field in ['name', 'email', 'phone']:
                                 if not contact_info.get(field):
                                     missing_fields.append(field)
 
                             if missing_fields:
+                                logger.warning(f"Missing contact fields: {missing_fields}")
                                 st.warning(f"Missing information: {', '.join(missing_fields)}")
 
-                            st.write(contact_info)
-
-                        if 'experience' in parsed_data:
-                            st.subheader("Professional Experience")
-                            for exp in parsed_data['experience']:
-                                st.markdown(f"**{exp.get('company', 'Unknown Company')}**")
-                                st.markdown(f"*{exp.get('position', 'Unknown Position')}* ({exp.get('duration', 'Duration not specified')})")
-                                for bullet in exp.get('description', []):
-                                    st.markdown(f"- {bullet}")
+                            # Display contact info in a clean format
+                            if contact_info.get('name'):
+                                st.markdown(f"**Name:** {contact_info['name']}")
+                            if contact_info.get('email'):
+                                st.markdown(f"**Email:** {contact_info['email']}")
+                            if contact_info.get('phone'):
+                                st.markdown(f"**Phone:** {contact_info['phone']}")
 
                         # Optional AI Analysis Section
                         st.markdown("---")
@@ -112,16 +121,19 @@ def main():
                                 help="Optional: Provide API key for AI-powered analysis"
                             )
 
-                            if api_key and st.button("Run AI Analysis"):
-                                try:
-                                    parser.set_api_key(api_key)
-                                    enhanced_data = parser.enhance_with_ai(parsed_data)
-                                    if enhanced_data.get('ai_analysis'):
-                                        st.success("✅ AI Analysis completed!")
-                                        st.json(enhanced_data['ai_analysis'])
-                                except Exception as e:
-                                    logger.error(f"AI analysis failed: {str(e)}")
-                                    st.error("AI analysis failed. Please check your API key and try again.")
+                            if api_key:
+                                if st.button("Run AI Analysis"):
+                                    try:
+                                        parser.api_key = api_key  # Set API key
+                                        logger.info("Starting AI analysis")
+                                        enhanced_data = parser.enhance_with_ai(parsed_data)
+                                        if enhanced_data.get('ai_analysis'):
+                                            st.success("✅ AI Analysis completed!")
+                                            st.json(enhanced_data['ai_analysis'])
+                                            logger.info("AI analysis completed successfully")
+                                    except Exception as e:
+                                        logger.error(f"AI analysis failed: {str(e)}", exc_info=True)
+                                        st.error(f"AI analysis failed: {str(e)}")
 
             except Exception as e:
                 logger.error(f"Error processing resume: {str(e)}", exc_info=True)
@@ -129,7 +141,7 @@ def main():
 
             finally:
                 # Clean up temporary file
-                if tmp_file_path and os.path.exists(tmp_file_path):
+                if 'tmp_file_path' in locals() and os.path.exists(tmp_file_path):
                     try:
                         os.unlink(tmp_file_path)
                         logger.debug("Cleaned up temporary file")

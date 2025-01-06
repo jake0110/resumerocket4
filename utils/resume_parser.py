@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Dict, Optional, List
 import json
 import os
@@ -17,93 +18,139 @@ class ResumeParser:
         self.api_key = openai_api_key
         logger.info("Initializing ResumeParser")
 
-    def set_api_key(self, api_key: str):
-        """Set or update the OpenAI API key."""
-        self.api_key = api_key
-        logger.info("API key updated")
+    def parse_docx(self, file_path: str) -> Dict:
+        """Parse DOCX resume file and extract information."""
+        logger.info(f"Starting to parse DOCX file: {file_path}")
+
+        try:
+            if not os.path.exists(file_path):
+                logger.error(f"File not found: {file_path}")
+                raise FileNotFoundError(f"File not found: {file_path}")
+
+            doc = Document(file_path)
+            paragraphs = []
+
+            # Extract text from the document with better logging
+            for para in doc.paragraphs:
+                text = para.text.strip()
+                if text:
+                    paragraphs.append(text)
+                    logger.debug(f"Extracted paragraph: {text[:100]}...")
+
+            if not paragraphs:
+                logger.error("Document appears to be empty")
+                raise ValueError("Document appears to be empty")
+
+            logger.info(f"Successfully extracted {len(paragraphs)} paragraphs")
+
+            # Extract contact information
+            contact_info = self._extract_contact_info(paragraphs)
+            logger.debug(f"Extracted contact info: {contact_info}")
+
+            # Extract experience information
+            experience = self._extract_experience(paragraphs)
+            logger.debug(f"Extracted {len(experience)} experience entries")
+
+            return {
+                'contact': contact_info,
+                'experience': experience
+            }
+
+        except Exception as e:
+            logger.error(f"Error parsing DOCX file: {str(e)}", exc_info=True)
+            raise
 
     def _extract_contact_info(self, paragraphs: List[str]) -> Dict:
-        """Extract contact information using basic parsing."""
+        """Extract contact information using pattern matching."""
         contact_info = {
             'name': '',
             'email': '',
             'phone': ''
         }
 
-        # Look for patterns in first few paragraphs
-        for para in paragraphs[:5]:  # Usually contact info is at the top
-            text = para.lower()
+        # Patterns for matching
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        phone_patterns = [
+            r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # 123-456-7890
+            r'\(\d{3}\)\s*\d{3}[-.]?\d{4}',    # (123) 456-7890
+            r'\+\d{1,2}\s*\d{3}[-.]?\d{3}[-.]?\d{4}',  # +1 123-456-7890
+            r'\b\d{10}\b'  # Plain 10 digits
+        ]
 
-            # Email pattern
-            if '@' in text and '.' in text and not contact_info['email']:
+        # Process each paragraph
+        for i, para in enumerate(paragraphs):
+            text = para.strip()
+            if not text:
+                continue
+
+            # Extract email
+            if not contact_info['email']:
+                email_matches = re.findall(email_pattern, text)
+                if email_matches:
+                    contact_info['email'] = email_matches[0]
+                    logger.debug(f"Found email: {contact_info['email']}")
+
+            # Extract phone
+            if not contact_info['phone']:
+                for pattern in phone_patterns:
+                    phone_matches = re.findall(pattern, text)
+                    if phone_matches:
+                        phone = re.sub(r'[^\d+]', '', phone_matches[0])
+                        if len(phone) >= 10:
+                            contact_info['phone'] = phone
+                            logger.debug(f"Found phone: {contact_info['phone']}")
+                            break
+
+            # Extract name (only from first 3 paragraphs)
+            if not contact_info['name'] and i < 3:
                 words = text.split()
-                for word in words:
-                    if '@' in word and '.' in word:
-                        contact_info['email'] = word.strip()
-                        break
+                if 2 <= len(words) <= 3:  # Name usually consists of 2-3 words
+                    # Check if all words start with capital letters and contain only letters
+                    if all(word[0].isupper() and word.replace('-', '').replace("'", '').isalpha()
+                          for word in words):
+                        contact_info['name'] = text
+                        logger.debug(f"Found name: {contact_info['name']}")
 
-            # Phone pattern
-            if any(char.isdigit() for char in text) and not contact_info['phone']:
-                # Extract sequence of numbers and common separators
-                phone_candidates = []
-                current = ''
-                for char in text:
-                    if char.isdigit() or char in '+-().':
-                        current += char
-                    elif current:
-                        if sum(c.isdigit() for c in current) >= 10:  # Most phone numbers have at least 10 digits
-                            phone_candidates.append(current.strip())
-                        current = ''
-                if current and sum(c.isdigit() for c in current) >= 10:
-                    phone_candidates.append(current.strip())
-
-                if phone_candidates:
-                    contact_info['phone'] = phone_candidates[0]
-
-            # Name pattern (usually in the first or second paragraph)
-            if not contact_info['name'] and len(paragraphs) > 0:
-                # Assume the first non-empty paragraph that's not an email or phone is the name
-                first_para = paragraphs[0].strip()
-                if first_para and '@' not in first_para and not any(char.isdigit() for char in first_para):
-                    contact_info['name'] = first_para
-
+        logger.info(f"Completed contact info extraction: {contact_info}")
         return contact_info
 
     def _extract_experience(self, paragraphs: List[str]) -> List[Dict]:
-        """Extract experience information using basic parsing."""
+        """Extract experience information."""
         experiences = []
         current_exp = None
-
-        # Common section headers
-        experience_headers = ['experience', 'work experience', 'professional experience', 'employment history']
-
         in_experience_section = False
-        for para in paragraphs:
-            text = para.strip().lower()
 
-            # Check if we're entering experience section
-            if any(header in text for header in experience_headers):
+        for para in paragraphs:
+            text = para.strip()
+            if not text:
+                continue
+
+            # Check for experience section markers
+            if any(marker in text.lower() for marker in ['experience', 'work history', 'employment']):
                 in_experience_section = True
                 continue
 
-            if in_experience_section and text:
-                # New experience entry often starts with company name or position
-                if text.isupper() or any(word[0].isupper() for word in text.split()):
-                    if current_exp:
-                        experiences.append(current_exp)
-                    current_exp = {
-                        'company': para.strip(),
-                        'position': '',
-                        'duration': '',
-                        'description': []
-                    }
-                elif current_exp:
-                    if not current_exp['position']:
-                        current_exp['position'] = para.strip()
-                    elif not current_exp['duration'] and ('20' in para or '19' in para):
-                        current_exp['duration'] = para.strip()
-                    else:
-                        current_exp['description'].append(para.strip())
+            if not in_experience_section:
+                continue
+
+            # New experience entry detection
+            if text[0].isupper() and len(text.split()) <= 4:
+                if current_exp:
+                    experiences.append(current_exp)
+                current_exp = {
+                    'company': text,
+                    'position': '',
+                    'duration': '',
+                    'description': []
+                }
+            elif current_exp:
+                # Categorize the line
+                if not current_exp['position'] and text[0].isupper():
+                    current_exp['position'] = text
+                elif not current_exp['duration'] and any(x in text.lower() for x in ['present', '20', '19']):
+                    current_exp['duration'] = text
+                elif text.strip():
+                    current_exp['description'].append(text.strip())
 
         # Add the last experience
         if current_exp:
@@ -111,96 +158,20 @@ class ResumeParser:
 
         return experiences
 
-    def parse_docx(self, file_path: str) -> Dict:
-        """Parse DOCX resume file and extract information."""
-        logger.info(f"Parsing DOCX file: {file_path}")
-
-        try:
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"File not found: {file_path}")
-
-            doc = Document(file_path)
-            paragraphs = []
-
-            # Extract text from the document
-            for paragraph in doc.paragraphs:
-                text = paragraph.text.strip()
-                if text:
-                    paragraphs.append(text)
-
-            if not paragraphs:
-                raise ValueError("Document appears to be empty")
-
-            # Parse basic information
-            contact_info = self._extract_contact_info(paragraphs)
-            experiences = self._extract_experience(paragraphs)
-
-            parsed_data = {
-                'contact': contact_info,
-                'experience': experiences
-            }
-
-            logger.info("Successfully parsed resume content")
-            return parsed_data
-
-        except Exception as e:
-            logger.error(f"Error parsing DOCX file: {str(e)}")
-            raise
-
     def enhance_with_ai(self, parsed_data: Dict) -> Dict:
         """Enhance parsed data with AI analysis."""
         if not self.api_key:
             raise ValueError("OpenAI API key is required for AI analysis")
 
         try:
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            }
+            # Prepare resume text for analysis
+            resume_text = self._prepare_resume_text(parsed_data)
+            logger.debug("Prepared resume text for AI analysis")
 
-            # Convert parsed data to text for analysis
-            resume_text = f"""
-            Name: {parsed_data['contact'].get('name', '')}
-            Email: {parsed_data['contact'].get('email', '')}
-            Phone: {parsed_data['contact'].get('phone', '')}
+            # Make API request
+            response = self._make_openai_request(resume_text)
 
-            Experience:
-            """
-            for exp in parsed_data['experience']:
-                resume_text += f"\n{exp.get('company', '')}\n"
-                resume_text += f"{exp.get('position', '')} ({exp.get('duration', '')})\n"
-                for desc in exp.get('description', []):
-                    resume_text += f"- {desc}\n"
-
-            analysis_prompt = f"""
-            Analyze the following resume and provide insights. Return in JSON format:
-            {{
-                "experience_level": "entry/mid/senior/executive",
-                "key_skills": ["top 5 most important skills"],
-                "experience_summary": "brief summary of experience",
-                "best_suited_roles": ["role1", "role2"]
-            }}
-
-            Resume text:
-            {resume_text}
-            """
-
-            data = {
-                "model": "gpt-3.5-turbo",
-                "messages": [
-                    {"role": "system", "content": "You are a professional resume analyst."},
-                    {"role": "user", "content": analysis_prompt}
-                ],
-                "response_format": {"type": "json_object"}
-            }
-
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=30
-            )
-
+            # Process response
             if response.status_code == 200:
                 result = response.json()
                 ai_analysis = json.loads(result['choices'][0]['message']['content'])
@@ -213,5 +184,64 @@ class ResumeParser:
             return parsed_data
 
         except Exception as e:
-            logger.error(f"Error in AI analysis: {str(e)}")
+            logger.error(f"Error in AI analysis: {str(e)}", exc_info=True)
             raise
+
+    def _prepare_resume_text(self, parsed_data: Dict) -> str:
+        """Prepare resume text for AI analysis."""
+        resume_text = []
+
+        # Add contact information
+        if 'contact' in parsed_data:
+            contact = parsed_data['contact']
+            resume_text.extend([
+                f"Name: {contact.get('name', '')}",
+                f"Email: {contact.get('email', '')}",
+                f"Phone: {contact.get('phone', '')}",
+                ""
+            ])
+
+        # Add experience information
+        if 'experience' in parsed_data:
+            resume_text.append("Experience:")
+            for exp in parsed_data['experience']:
+                resume_text.extend([
+                    f"\nCompany: {exp.get('company', '')}",
+                    f"Position: {exp.get('position', '')}",
+                    f"Duration: {exp.get('duration', '')}",
+                    "Description:"
+                ])
+                for desc in exp.get('description', []):
+                    resume_text.append(f"- {desc}")
+                resume_text.append("")
+
+        return "\n".join(resume_text)
+
+    def _make_openai_request(self, resume_text: str):
+        """Make request to OpenAI API."""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "model": "gpt-3.5-turbo",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a professional resume analyzer. Provide analysis in JSON format."
+                },
+                {
+                    "role": "user",
+                    "content": f"Analyze this resume and provide insights:\n\n{resume_text}"
+                }
+            ],
+            "response_format": {"type": "json_object"}
+        }
+
+        return requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=data,
+            timeout=30
+        )
