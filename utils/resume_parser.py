@@ -288,20 +288,20 @@ class ResumeParser:
 
     def parse_docx(self, file_path: str, output_format: str = 'json') -> str:
         """
-        Parse DOCX resume file and extract structured information in specified format.
+        Parse DOCX resume file and extract only specific requested fields.
 
         Args:
             file_path (str): Path to the DOCX file
             output_format (str): 'json' or 'csv'
 
         Returns:
-            str: Parsed resume data in specified format
+            str: Parsed resume data in specified format with only requested fields
         """
         logger.info(f"Attempting to parse DOCX file: {file_path}")
 
         try:
             doc = Document(file_path)
-            sections = {'contact': [], 'experience': [], 'education': [], 'skills': [], 'unknown': []}
+            sections = {'contact': [], 'experience': [], 'unknown': []}
             current_section = None
             full_text = []
 
@@ -325,29 +325,20 @@ class ResumeParser:
             # Extract required information
             contact_info = self._extract_contact_info('\n'.join(sections['contact'] + sections['unknown']))
             recent_position = self._extract_most_recent_position(sections['experience'])
-            education_info = self._extract_education(sections['education'])
-            skills_info = self._extract_skills(sections['skills'])
 
-            # Combine all extracted information
+            # Combine only the requested fields
             parsed_data = {
+                # Contact Information
                 'name': contact_info['name'],
                 'location': contact_info['location'],
                 'email': contact_info['email'],
                 'phone': contact_info['phone'],
                 'linkedin': contact_info['linkedin'],
+                # Most Recent Position
                 'most_recent_company': recent_position['company'],
-                'most_recent_position': recent_position['position'],
-                'most_recent_duration': recent_position['duration'],
-                'education': education_info,
-                'skills': skills_info
+                'most_recent_title': recent_position['position'],
+                'most_recent_dates': recent_position['duration']
             }
-
-            # Add AI analysis if API key is available
-            if self.openai_api_key:
-                full_text_content = '\n'.join(full_text)
-                ai_analysis = self.analyze_with_openai(full_text_content)
-                parsed_data['ai_analysis'] = ai_analysis
-
 
             # Format output according to preference
             if output_format.lower() == 'csv':

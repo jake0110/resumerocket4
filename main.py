@@ -3,6 +3,7 @@ from utils.resume_parser import ResumeParser
 import tempfile
 import os
 import logging
+import json # Added import for json handling
 from components.forms import render_personal_info, render_education, render_experience, render_skills
 from components.preview import render_preview
 
@@ -45,10 +46,29 @@ def main():
                 # Parse the resume
                 parsed_data = parser.parse_docx(tmp_file_path, output_format.lower())
 
-                # Display results
+                # Display results in organized sections
                 st.subheader("Parsed Resume Data")
 
                 if output_format == 'JSON':
+                    # First display a clean summary
+                    st.write("### Contact Information")
+                    data = json.loads(parsed_data)
+                    cols = st.columns(2)
+                    with cols[0]:
+                        st.write("Name:", data['name'])
+                        st.write("Email:", data['email'])
+                        st.write("Phone:", data['phone'])
+                    with cols[1]:
+                        st.write("Location:", data['location'])
+                        st.write("LinkedIn:", data['linkedin'])
+
+                    st.write("### Most Recent Position")
+                    st.write("Company:", data['most_recent_company'])
+                    st.write("Title:", data['most_recent_title'])
+                    st.write("Dates:", data['most_recent_dates'])
+
+                    # Then show the raw JSON for reference
+                    st.write("### Raw JSON Output")
                     st.json(parsed_data)
                 else:  # CSV
                     st.text("CSV Output:")

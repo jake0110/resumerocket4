@@ -1,0 +1,630 @@
+
+ResumeRocket5 - Resume Parser
+Upload your resume and get structured information with AI-powered analysis.
+Upload your resume
+Drag and drop file hereLimit 200MB per file • DOCX
+Browse files
+•	##resume Docx file Melinda West Resume.docx
+71.6KB
+Select output format
+JSON
+Parsed Resume Data
+{
+"name":
+"No information available"
+"location":
+"Melinda created an EA program for UnityPoint Health, starting from the ground up"
+"email":
+"No information available"
+"phone":
+"No information available"
+"linkedin":
+"No information available"
+"most_recent_company":
+"No information available"
+"most_recent_position":
+"No information available"
+"most_recent_duration":
+"No information available"
+"education":[
+0:{
+"institution":
+"MANAGEMENT SCOPE: Own the end to end solution including system architecture and design, across all competencies, across all services (within the account). Understands the client’s business and needs, across all services, react and plan for the account. Responsible for the Account Innovation and Technology Plan."
+"degree":
+""
+"graduation_year":
+""
+}
+1:{
+"institution":
+"Work with all stakeholders to develop a holistic view of the enterprise’s strategy and technology to enable IT and the organization to work together to achieve competitive advantage through the better use of technology. This includes helping IT management and business stakeholders with decision-making relating to not only operational optimization but also longer-term strategic direction, as well as designing and modeling future architecture."
+"degree":
+""
+"graduation_year":
+""
+}
+2:{
+"institution":
+"Executive Architect, Client Technical Leader, Public Market, Global Markets"
+"degree":
+""
+"graduation_year":
+""
+}
+3:{
+"institution":
+"MANAGEMENT SCOPE: Advance strategic IBM architectures and cloud technologies, and grow revenue with the client. Act as a technology partner and technical consultant to the IBM account team and industry executive management and the customer helping them create their digital transformation strategy."
+"degree":
+""
+"graduation_year":
+""
+}
+4:{
+"institution":
+"Attained over 100% of $690M quota. Certified IBM Expert Seller, Certified IBM Blockchain Consultant, Certified IBM Cloud Advisor, Global Sales School Graduate, Design Thinking Co-Creator Badge, Top Gun Training- Solutions and Services, Systems & Platform and Hybrid Cloud. IBM Cloud Private Infrastructure and Architecture Badge."
+"degree":
+""
+"graduation_year":
+""
+}
+5:{
+"institution":
+"Cognitive, AI, Machine Learning, Blockchain, Security, Mobile, IoT and Augmented Reality/Virtual Reality."
+"degree":
+""
+"graduation_year":
+""
+}
+6:{
+"institution":
+"Cloud Modernization: A large Healthcare company’s system comprised of a mélange of disparate, outdated and poorly documented ancillary systems needed a more agile architecture that could function both on premises and in the cloud. High maintenance costs, shrinking resource pool, end of life systems and lack of integration across systems made data difficult to share and costs to continue to increase."
+"degree":
+""
+"graduation_year":
+""
+}
+7:{
+"institution":
+"Actions and Results: Architected a system that leveraged existing technological investment and integrated it with new cloud native architectures using micro services in a hybrid cloud environment. This resulted in a cost savings of $21M over 3 years."
+"degree":
+""
+"graduation_year":
+""
+}
+8:{
+"institution":
+"UNITYPOINT HEALTH SYSTEM, West Des Moines, IA Feb –Sept 2016"
+"degree":
+""
+"graduation_year":
+"2015"
+}
+9:{
+"institution":
+"Nonprofit health system - 13th largest in USA – 30,000 employees / 5M annual patient visits / $110M IT budget"
+"degree":
+""
+"graduation_year":
+""
+}
+10:{
+"institution":
+"Chief Enterprise Architect, Innovation and Architecture"
+"degree":
+""
+"graduation_year":
+""
+}
+11:{
+"institution":
+"SUMMARY: Created Enterprise Architecture practice, which introduced cohesive strategy for business, technology, applications, and data – solved a fragmentation problem caused by fast growth via acquisitions. The new EA roadmap broke down isolated “silos,” eliminated redundant systems, introduced standardization, and provided a clear view of all key EA components."
+"degree":
+""
+"graduation_year":
+""
+}
+12:{
+"institution":
+"MANAGEMENT SCOPE: Chief Architect for a $4B health system – 17 hospitals & 280 clinics. Led innovation, consolidated systems, cut redundancy, reduced costs, improved collaboration, and optimized workflows."
+"degree":
+""
+"graduation_year":
+""
+}
+13:{
+"institution":
+"Cut Wasteful Archiving & Decommissioning: UPH spends millions of dollars annually to archive & access data from decomissioned applications (unnecessary interfaces to mimic obsolete systems)."
+"degree":
+""
+"graduation_year":
+""
+}
+14:{
+"institution":
+"Actions and Results: Saved $1.5M annually. Analyzed existing processes and reduced reliance upon outside vendors. For UC, replaced large, planned CAPEX investment with a SaaS solution."
+"degree":
+""
+"graduation_year":
+""
+}
+15:{
+"institution":
+"Transformation to Data-Driven: UPH had inherited disparate monitoring systems – neither integrated nor accessible by people who needed information to make decisions – no consistent way to forecast usage, capacity or fix system and application issues. UPH had no centralized reporting or analytics for KPIs, metrics, planning or ops management– UPH needed a strategy to cut duplication, improve information availability and increase data integrity."
+"degree":
+""
+"graduation_year":
+""
+}
+16:{
+"institution":
+"Actions and Results: Integrated data across tools such as SCOM, SCCM, Solarwinds, vRealize, SQL, AD, & Cisco Network Monitoring. Created a “single source of truth,” IT Repository, BI and Analytics that provided complete, accurate and meaningful data for executive decision-making."
+"degree":
+""
+"graduation_year":
+""
+}
+17:{
+"institution":
+"HEWLETT-PACKARD ENTERPRISE, HEALTH AND LIFE SCIENCES April –Jan 2015"
+"degree":
+""
+"graduation_year":
+"2013"
+}
+18:{
+"institution":
+"Principal, Solution Architecture"
+"degree":
+""
+"graduation_year":
+""
+}
+19:{
+"institution":
+"SUMMARY: Quickly got up to speed. Led and coached solutions teams struggling to keep pace with skyrocketing demand for proposals. Orchestrated large-scale solutions for state and local government – from $10M to $200M – for healthcare & Medicaid Management Information systems (MMIS). Oversaw 78+ person pursuit teams. Generated $54M in profit via sales to new logos, RFXs & contract renewals."
+"degree":
+""
+"graduation_year":
+""
+}
+20:{
+"institution":
+"MANAGEMENT SCOPE: Led solution development, cost modeling, pricing, deal governance, compliance, and proposal development. Devised complex solutions that incorporated HP’s Applications, Technology, Business Process Outsourcing (BPO), Mobile, Analytics & Data Management business units and use of COTS products"
+"degree":
+""
+"graduation_year":
+""
+}
+21:{
+"institution":
+"Product Development -Portfolio Repository: Large MMIS programs have multiple vendors, work-streams, deliverables and processes. Most have their own tools. The client needed one place to go for their team members and the vendors to access all project portfolio information."
+"degree":
+""
+"graduation_year":
+""
+}
+22:{
+"institution":
+"Actions and Results: Spearheaded Product Development for MMIS Portfolio Repository . Devised an innovative solution that standardized and automated information exchange. The solution worked so successfully, HPE rolled it out nationally."
+"degree":
+""
+"graduation_year":
+""
+}
+23:{
+"institution":
+"VENTURETHINK GROUP CONSULTING June- April 2013"
+"degree":
+""
+"graduation_year":
+"2008"
+}
+24:{
+"institution":
+"Enterprise Architecture / Process Improvement / Big Data Solutions / Digital Transformation"
+"degree":
+""
+"graduation_year":
+""
+}
+25:{
+"institution":
+"Principal | Management & Technology Strategist"
+"degree":
+""
+"graduation_year":
+""
+}
+26:{
+"institution":
+"CAPGEMINI, Omaha, NE (–2003), Director, Business Solutions Architecture & Project Management: Promoted 3 times. Oversaw delivery of technology engagements for software development, systems integration, Process Improvement, BI & analytics and compliance. Career Dev Manager for 13 consultants."
+"degree":
+""
+"graduation_year":
+"1998"
+}
+27:{
+"institution":
+"Consistently ranked nationally among top 5% of consultants (4 consecutive years)."
+"degree":
+""
+"graduation_year":
+""
+}
+28:{
+"institution":
+"Met billing and business development targets: $2.5M"
+"degree":
+""
+"graduation_year":
+""
+}
+29:{
+"institution":
+"NEBRASKA BUSINESS DEVELOPMENT CENTER, Omaha, NE (Oct –Aug 1998), Director,Business Consulting and Director, Manufacturing Extension Partnership: Promoted 3 times. Directed 3 offices and 18-person team of business consultants who advised startups on market & business planning, market analysis, loan packaging and economic development."
+"degree":
+""
+"graduation_year":
+"1993"
+}
+30:{
+"institution":
+"Published “Keys to Successful Business Start-up,” used for many years after my departure."
+"degree":
+""
+"graduation_year":
+""
+}
+31:{
+"institution":
+"Wrote feasibility study for NE’s first ever Division 1 hockey team."
+"degree":
+""
+"graduation_year":
+""
+}
+32:{
+"institution":
+"Masters Public Administration (MPA), UNIVERSITY OF NEBRASKA AT OMAHA, Omaha, NE,"
+"degree":
+""
+"graduation_year":
+"1995"
+}
+33:{
+"institution":
+"in Political Science, NORTHERN ILLINOIS UNIVERSITY, DeKalb, IL,"
+"degree":
+"BA"
+"graduation_year":
+"1993"
+}
+34:{
+"institution":
+"Emphasis: International Relations, Minors in French and Economics / Study Abroad (French): Université Domain"
+"degree":
+""
+"graduation_year":
+""
+}
+35:{
+"institution":
+"Certification, Economic Development Finance Professional, National Development Council"
+"degree":
+""
+"graduation_year":
+""
+}
+36:{
+"institution":
+"Certification, Project Management, University of Nebraska at Omaha"
+"degree":
+""
+"graduation_year":
+""
+}
+37:{
+"institution":
+"Certified Scrum (CSM) / Certified Mediator"
+"degree":
+"Master"
+"graduation_year":
+""
+}
+38:{
+"institution":
+"Leadership Omaha Academy, Omaha Chamber of Commerce"
+"degree":
+""
+"graduation_year":
+""
+}
+39:{
+"institution":
+"West Des Moines Leadership Academy, West Des Moines Chamber of Commerce"
+"degree":
+""
+"graduation_year":
+""
+}
+40:{
+"institution":
+"Certified Family Law Mediator, Polk County Volunteer Lawyer’s Project"
+"degree":
+""
+"graduation_year":
+""
+}
+41:{
+"institution":
+"Booster Pak, Board Member"
+"degree":
+""
+"graduation_year":
+""
+}
+42:{
+"institution":
+"Design Thinking Co-Creator"
+"degree":
+""
+"graduation_year":
+""
+}
+43:{
+"institution":
+"Certified, IBM Blockchain Consultant"
+"degree":
+""
+"graduation_year":
+""
+}
+44:{
+"institution":
+"Certified, Cloud Solution Advisor, Cloud Computing Reference Architecture"
+"degree":
+""
+"graduation_year":
+""
+}
+45:{
+"institution":
+"IBM Cloud Private Infrastructure and Architecture Badge"
+"degree":
+""
+"graduation_year":
+""
+}
+46:{
+"institution":
+"Certified, IBM Expert Seller"
+"degree":
+""
+"graduation_year":
+""
+}
+47:{
+"institution":
+"Cloud and Cognitive Patterns"
+"degree":
+""
+"graduation_year":
+""
+}
+48:{
+"institution":
+"Selling to the CXO"
+"degree":
+""
+"graduation_year":
+""
+}
+49:{
+"institution":
+"Business and Industry Insights"
+"degree":
+""
+"graduation_year":
+""
+}
+50:{
+"institution":
+"Global Sales School"
+"degree":
+""
+"graduation_year":
+""
+}
+51:{
+"institution":
+"Ambassador, HIMSS"
+"degree":
+""
+"graduation_year":
+"2018"
+}
+]
+"skills":[
+0
+:
+"West Des Moines"
+1
+:
+"Summary: As BCBSNE expanded its scope of their project management office to include both technology and business"
+2
+:
+"processes"
+3
+:
+"on-line"
+4
+:
+"facilities and operations."
+5
+:
+"BUSINESS SCOPE & SAMPLE PROJECTS: Built an “A-List” of top clients – mostly Fortune 500 – primarily in finance"
+6
+:
+"Ranked #1 IT Co. in the World – 350"
+7
+:
+"reporting and artifacts. Championed transformation from decentralized PM methodologies to a cohesive ePMO practice. $45M annual project budget-18-direct reports."
+8
+:
+"Reporting and Analytics – that had vendor challenges"
+9
+:
+"Chief Architect"
+10
+:
+"escalating costs"
+11
+:
+"and advanced state-of-the art technologies."
+12
+:
+"BLUE CROSS BLUE SHIELD OF NEBRASKA April 2006–May 2008"
+13
+:
+"Actions and Results: Guided vendor selection for a 4.3M sq. ft. real estate services contract"
+14
+:
+"000."
+15
+:
+"North America"
+16
+:
+"costs increased"
+17
+:
+"Enterprise Program Management Office"
+18
+:
+"Wellmark: Restructured a troubled $4M Health and Wellness program – BI"
+19
+:
+"process improvement"
+20
+:
+"Actions and Results: Standardized PM processes. Developed PM career path and tracking KPIs. Enhanced Project Server and implemented new functionality ensuring staff usage and compliance with new processes. Introduced the use of Agile methodology from traditional waterfall SDLC."
+21
+:
+"healthcare"
+22
+:
+"NE Nov 2003–April 2006"
+23
+:
+"payment processing"
+24
+:
+"Principal Financial Group: Unsatisfied with existing facilities vendor: quality had worsened"
+25
+:
+"cut CPU usage from 170% to 60% and reporting redundancy by 52%."
+26
+:
+"IA Sept 2016–Present"
+27
+:
+"000 employees"
+28
+:
+"BELLEVUE UNIVERSITY"
+29
+:
+"Vice President"
+30
+:
+"Enrollment and Marketing"
+31
+:
+"and international degree programs. Accountable for the generation of $38M annual revenue. Approval authority up to $300"
+32
+:
+"opened a full view of facilities & tightened management of leases & construction. Saved PFG several millions of dollars by contracting with a national vendor that applied best practices"
+33
+:
+"security"
+34
+:
+"First Data Resources: First Data had just completed due diligence on its M&A for Citi’s lock-box business. Led a $64M post-M&A integration. They had a huge need to manage and coordinate all aspects including technology"
+35
+:
+"BPO"
+36
+:
+"SUMMARY: Reversed declining trends in revenue by infusing enrollment and marketing with new processes and technologies. Led transformation from “build it they will come” to a proactive marketing and sales model. Directed 70-person organization – 8 departments – with full P&L control for $10M budget including $5M marketing budget for in-class"
+37
+:
+"redundant work streams"
+38
+:
+"PayPal: Helmed the global Single Reporting Architecture and EDW optimization program. Charged with the data warehouse redesign from a source-focused to a business-focused system that could facilitate decision making through standardized reporting and analytics. Reduced reliance upon eBay’s EDW space"
+39
+:
+"I was selected to lead and build the newly created enterprise program management office."
+40
+:
+"and few results."
+41
+:
+"Director"
+42
+:
+"corporate"
+43
+:
+"Management Scope: New ePMO with little standardization for portfolio/project/program/resource management"
+44
+:
+"Omaha"
+45
+:
+"GTS Financial Services Market"
+46
+:
+"and operations were antiquated — too many manual processes and outdated technology."
+47
+:
+"automation"
+48
+:
+"Action and Results: Cut facilities and equipment costs 23% via consolidation of 6 remittance sites. Evaluated facility and-equipment leases and negotiated with global BPO (outsourcing) vendor. Performed post-acquisition closure and integration of personnel & facilities. Determined new technology was needed to accommodate the wholesale business."
+49
+:
+"IBM"
+50
+:
+"including facilities management of 2.4M sq. ft. corporate campus and 150 global offices in 15 countries. Streamlined processes"
+51
+:
+"In-class & Online Degrees / Corporate Learning / International Programs / Process Improvement / Product Development"
+52
+:
+"and insurance. Collaborated at C-level on strategy and solutions."
+53
+:
+"expansion into new market"
+]
+}
+________________________________________
+Manual Entry
+Personal Info
+Education
+Experience
+Skills
+Preview
+Personal Information
+OpenAI API Key
+Resume Upload
+Upload your existing resume (DOCX)
+Drag and drop file hereLimit 200MB per file • DOCX
+Browse files
+Full Name
+Email
+Phone
+Professional Level
+Entry Level
+
