@@ -31,23 +31,31 @@ class ResumeParser:
     def _extract_with_ai(self, text: str) -> Dict[str, Dict[str, str]]:
         """Use OpenAI to extract specific information from resume text."""
         try:
-            prompt = f"""Extract the following specific information from this resume text, maintaining exactly this structure:
+            prompt = f"""Given the following resume text, extract ONLY the specified information, ensuring exact matching of email addresses, phone numbers, and LinkedIn URLs. Use pattern recognition for these fields.
+
+            Required format:
             {{
                 "Contact Information": {{
-                    "Name": "person's full name",
-                    "Email": "email address",
-                    "Phone": "phone number",
+                    "Name": "full name",
+                    "Email": "exact email address from document",
+                    "Phone": "exact phone number from document",
                     "Location": "city, state",
-                    "LinkedIn": "linkedin profile url"
+                    "LinkedIn": "exact linkedin url from document"
                 }},
                 "Most Recent Position": {{
                     "Company": "company name",
-                    "Title": "job title",
-                    "Dates": "employment dates"
+                    "Title": "exact job title",
+                    "Dates": "employment period"
                 }}
             }}
 
-            If any field is not found, use "No information available".
+            Rules:
+            1. Maintain exact formatting of emails, phones, and URLs
+            2. Do not make up or infer missing information
+            3. Use "No information available" only when the field is truly missing
+            4. For dates, include both start and end dates if available
+            5. Extract the most recent position only
+
             Resume text:
             {text}
             """
@@ -55,7 +63,10 @@ class ResumeParser:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a precise resume parser that extracts specific fields exactly as requested."},
+                    {
+                        "role": "system",
+                        "content": "You are a precise resume parser that extracts specific fields exactly as they appear in the document."
+                    },
                     {"role": "user", "content": prompt}
                 ],
                 response_format={"type": "json_object"}
