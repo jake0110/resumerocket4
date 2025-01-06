@@ -8,9 +8,10 @@ from utils.resume_parser import ResumeParser
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
+        logging.FileHandler('app.log'),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     try:
+        logger.info("Starting ResumeRocket5 application")
         st.set_page_config(
             page_title="ResumeRocket5 - Resume Parser",
             layout="wide"
@@ -26,7 +28,7 @@ def main():
         st.title("ResumeRocket5 - Resume Parser")
         st.write("Upload your resume and get structured information with AI-powered analysis")
 
-        # File upload
+        # File upload section
         uploaded_file = st.file_uploader(
             "Upload your resume",
             type=['docx'],
@@ -53,34 +55,34 @@ def main():
                     # Display Contact Information
                     st.subheader("Contact Information")
                     contact_info = parsed_data.get('contact', {})
+                    missing_fields = []
 
+                    # Name field
                     if contact_info.get('name'):
                         st.write(f"**Name:** {contact_info['name']}")
+                    else:
+                        missing_fields.append('name')
+
+                    # Email field
                     if contact_info.get('email'):
                         st.write(f"**Email:** {contact_info['email']}")
+                    else:
+                        missing_fields.append('email')
+
+                    # Phone field
                     if contact_info.get('phone'):
                         st.write(f"**Phone:** {contact_info['phone']}")
+                    else:
+                        missing_fields.append('phone')
 
-                    # Check for missing fields
-                    missing = []
-                    for field in ['name', 'email', 'phone']:
-                        if not contact_info.get(field):
-                            missing.append(field)
-                    if missing:
-                        st.warning(f"Missing information: {', '.join(missing)}")
-                        logger.warning(f"Missing fields in contact info: {missing}")
+                    # Show missing fields warning
+                    if missing_fields:
+                        st.warning(f"Missing information: {', '.join(missing_fields)}")
+                        logger.warning(f"Missing fields in contact info: {missing_fields}")
 
-                    # Display Experience
-                    if parsed_data.get('experience'):
-                        st.subheader("Experience")
-                        for exp in parsed_data['experience']:
-                            with st.expander(exp.get('company', 'Experience Entry')):
-                                st.write(f"**Position:** {exp.get('position', '')}")
-                                st.write(f"**Duration:** {exp.get('duration', '')}")
-                                if exp.get('description'):
-                                    st.write("**Description:**")
-                                    for desc in exp['description']:
-                                        st.write(f"- {desc}")
+                    # Display parsed content for debugging
+                    with st.expander("Debug: View Parsed Content"):
+                        st.json(parsed_data)
 
             except Exception as e:
                 logger.error(f"Error processing document: {str(e)}")
@@ -89,7 +91,7 @@ def main():
 
             finally:
                 # Cleanup temporary file
-                if 'tmp_file_path' in locals() and os.path.exists(tmp_file_path):
+                if 'tmp_file_path' in locals():
                     try:
                         os.unlink(tmp_file_path)
                         logger.info("Temporary file cleaned up")
