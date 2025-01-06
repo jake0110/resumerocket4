@@ -1,0 +1,41 @@
+Prompt for Agent:
+
+We are transitioning to using Airparser via Zapier for our resume parsing functionality. To do this, I need you to prepare the app for integration by following these steps:
+
+Remove Current Parsing Implementation:
+
+Delete all code, dependencies, and configurations related to the existing resume parsing logic.
+Ensure the following components remain intact:
+File upload functionality in the Streamlit frontend.
+The existing OpenAI API integration for potential future use.
+Double-check that no residual parsing code interferes with the new integration.
+Prepare for Airparser-Zapier Integration:
+
+Set up the app to send uploaded resumes to Airparser via Zapier for parsing.
+Ensure the app can receive parsed data back from Zapier (e.g., names, emails, phone numbers, addresses, and previous employer details) and display or store it appropriately.
+Identify any specific input/output format requirements for Airparser and ensure compatibility.
+Integration Workflow:
+
+Create a Zap in Zapier to:
+Trigger when a resume is uploaded.
+Send the resume to Airparser for parsing.
+Return parsed results to the app for further processing or storage.
+Document the workflow steps in case future adjustments are needed.
+Git Rollback (if needed):
+
+If removing the parsing code introduces issues, roll back to an earlier build from Git where parsing was not yet implemented.
+Reapply any unrelated improvements from subsequent commits that are not tied to the previous parsing logic.
+Testing and Debugging:
+
+Test the integration end-to-end with both traditional and non-traditional resume formats.
+Verify that parsed data is accurate and appears correctly in the app.
+Document any errors or edge cases that may require adjustment in the Zapier workflow.
+Modular Architecture:
+
+Ensure the app is modular to allow easy swapping or upgrading of parsing solutions in the future.
+Clearly define integration points for Airparser and document them for future developers.
+Documentation:
+
+Update the project summary to reflect the removal of the old parsing logic and the integration with Airparser via Zapier.
+Include steps for setting up and maintaining the Zapier workflow.
+Let me know when the integration is complete, and share any blockers or questions as you progress. If additional resources or clarification are needed, feel free to ask.
