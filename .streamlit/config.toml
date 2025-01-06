@@ -9,6 +9,12 @@ enableCORS = false
 level = "debug"
 messageFormat = "%(asctime)s %(levelname)s %(message)s"
 
+[theme]
+primaryColor = "#F63366"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+
 [client]
 showErrorDetails = true
 toolbarMode = "developer"
