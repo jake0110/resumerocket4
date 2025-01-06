@@ -5,8 +5,12 @@ port = 5000
 enableXsrfProtection = false
 enableCORS = false
 
+[browser]
+serverAddress = "0.0.0.0"
+serverPort = 5000
+
 [logger]
-level = "debug"
+level = "info"
 messageFormat = "%(asctime)s %(levelname)s %(message)s"
 
 [theme]

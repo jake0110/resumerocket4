@@ -1198,7 +1198,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = "==1.0.0" },
     { name = "reportlab", specifier = ">=4.2.5" },
     { name = "requests", specifier = "==2.31.0" },
-    { name = "streamlit", specifier = "==1.29.0" },
+    { name = "streamlit", specifier = "==1.28.1" },
     { name = "trafilatura", specifier = ">=2.0.0" },
     { name = "twilio", specifier = ">=9.4.1" },
     { name = "typing", specifier = ">=3.10.0.0" },
@@ -1334,7 +1334,7 @@ wheels = [
 
 [[package]]
 name = "streamlit"
-version = "1.29.0"
+version = "1.28.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "altair" },
@@ -1361,9 +1361,9 @@ dependencies = [
     { name = "validators" },
     { name = "watchdog", marker = "sys_platform != 'darwin'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/2d/5273692001363f9534422707a8a8382b7b0b250832fdff473ed992680aa9/streamlit-1.29.0.tar.gz", hash = "sha256:b6dfff9c5e132e5518c92150efcd452980db492a45fafeac3d4688d2334efa07", size = 8033351 }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/f5/26c97945cd8934726b2e9d04a3b65474413b16cd91f96f9b926b8abc18fd/streamlit-1.28.1.tar.gz", hash = "sha256:cca04f6d95b14b7bc37f0cabaf27504b86af6b4e1af98d73acc80ecdcfbcc492", size = 8143962 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/96/9251b421d0a1c7d625a82a04bea56b8a9830c785940ec16db454b85c6db7/streamlit-1.29.0-py2.py3-none-any.whl", hash = "sha256:753510edb5bb831af0e3bdacd353c879ad5b4f0211e7efa0ec378809464868b4", size = 8374475 },
+    { url = "https://files.pythonhosted.org/packages/df/e2/e1c8e3abce0e819a4ef3c6a5af4ddbb1eadbca0cf2ebd5e58853edcd58bd/streamlit-1.28.1-py2.py3-none-any.whl", hash = "sha256:f41c4e590299279a910c6a874aabc1428eda074c5f9d944403d2e192fce2ebb0", size = 8427534 },
 ]
 
 [[package]]
