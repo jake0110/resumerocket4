@@ -1,60 +1,59 @@
 import logging
-from typing import Dict, List, Optional
-import re
-from datetime import datetime
+from typing import Dict, Optional
 import json
-import csv
-from io import StringIO
 import os
 from openai import OpenAI
+from docx import Document
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-try:
-    from docx import Document
-except ImportError as e:
-    logger.error(f"Failed to import python-docx: {str(e)}")
-    raise ImportError("python-docx is required but not properly installed. Please install it using 'pip install python-docx'")
-
 class ResumeParser:
     """Resume parsing with AI-powered extraction."""
 
-    def __init__(self):
-        """Initialize the parser."""
+    def __init__(self, openai_api_key: Optional[str] = None):
+        """Initialize the parser with OpenAI API key."""
         logger.info("Initializing ResumeParser")
-        # Initialize OpenAI client with minimal configuration
-        self.client = OpenAI()
-        logger.info("OpenAI client initialized successfully")
+        try:
+            # Initialize OpenAI client with provided API key or environment variable
+            self.client = OpenAI(api_key=openai_api_key or os.getenv('OPENAI_API_KEY'))
+            logger.info("OpenAI client initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize OpenAI client: {str(e)}")
+            raise
 
-    def _extract_with_ai(self, text: str) -> Dict[str, Dict[str, str]]:
+    def _extract_with_ai(self, text: str) -> Dict:
         """Use OpenAI to extract specific information from resume text."""
         try:
-            prompt = f"""Given the following resume text, extract ONLY the specified information, ensuring exact matching of email addresses, phone numbers, and LinkedIn URLs. Use pattern recognition for these fields.
+            prompt = f"""
+            Extract the following information from the resume text in a structured format.
+            Return the data in the following JSON format:
 
-            Required format:
             {{
-                "Contact Information": {{
-                    "Name": "full name",
-                    "Email": "exact email address from document",
-                    "Phone": "exact phone number from document",
-                    "Location": "city, state",
-                    "LinkedIn": "exact linkedin url from document"
+                "contact": {{
+                    "name": "full name",
+                    "email": "email address",
+                    "phone": "phone number",
+                    "location": "city, state"
                 }},
-                "Most Recent Position": {{
-                    "Company": "company name",
-                    "Title": "exact job title",
-                    "Dates": "employment period"
-                }}
+                "experience": [
+                    {{
+                        "company": "company name",
+                        "position": "job title",
+                        "duration": "employment period",
+                        "description": ["bullet point 1", "bullet point 2"]
+                    }}
+                ],
+                "education": [
+                    {{
+                        "institution": "school name",
+                        "degree": "degree name",
+                        "graduation_year": "year"
+                    }}
+                ],
+                "skills": ["skill1", "skill2"]
             }}
-
-            Rules:
-            1. Maintain exact formatting of emails, phones, and URLs
-            2. Do not make up or infer missing information
-            3. Use "No information available" only when the field is truly missing
-            4. For dates, include both start and end dates if available
-            5. Extract the most recent position only
 
             Resume text:
             {text}
@@ -63,10 +62,7 @@ class ResumeParser:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a precise resume parser that extracts specific fields exactly as they appear in the document."
-                    },
+                    {"role": "system", "content": "You are a precise resume parser that extracts specific fields exactly as they appear in the document."},
                     {"role": "user", "content": prompt}
                 ],
                 response_format={"type": "json_object"}
@@ -78,24 +74,10 @@ class ResumeParser:
 
         except Exception as e:
             logger.error(f"Error in AI extraction: {str(e)}")
-            # Return default structure if AI extraction fails
-            return {
-                "Contact Information": {
-                    "Name": "No information available",
-                    "Email": "No information available",
-                    "Phone": "No information available",
-                    "Location": "No information available",
-                    "LinkedIn": "No information available"
-                },
-                "Most Recent Position": {
-                    "Company": "No information available",
-                    "Title": "No information available",
-                    "Dates": "No information available"
-                }
-            }
+            raise
 
-    def parse_docx(self, file_path: str, output_format: str = 'json') -> str:
-        """Parse DOCX resume file and extract only specific requested fields."""
+    def parse_docx(self, file_path: str) -> Dict:
+        """Parse DOCX resume file and extract information."""
         logger.info(f"Parsing DOCX file: {file_path}")
 
         try:
@@ -114,12 +96,39 @@ class ResumeParser:
             # Extract information using AI
             parsed_data = self._extract_with_ai(complete_text)
 
-            # Return formatted output
-            if output_format.lower() == 'json':
-                return json.dumps(parsed_data, indent=2)
-            else:
-                logger.warning("Unsupported output format requested, defaulting to JSON")
-                return json.dumps(parsed_data, indent=2)
+            # Add AI analysis of the resume
+            try:
+                analysis_prompt = f"""
+                Analyze the following resume and provide insights. Return in JSON format:
+                {{
+                    "experience_level": "entry/mid/senior/executive",
+                    "key_skills": ["top 5 most important skills"],
+                    "experience_summary": "brief summary of experience",
+                    "best_suited_roles": ["role1", "role2"],
+                    "improvement_suggestions": ["suggestion1", "suggestion2"]
+                }}
+
+                Resume text:
+                {complete_text}
+                """
+
+                analysis_response = self.client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are a professional resume analyst."},
+                        {"role": "user", "content": analysis_prompt}
+                    ],
+                    response_format={"type": "json_object"}
+                )
+
+                ai_analysis = json.loads(analysis_response.choices[0].message.content)
+                parsed_data['ai_analysis'] = ai_analysis
+                logger.info("Successfully added AI analysis")
+
+            except Exception as e:
+                logger.warning(f"AI analysis failed but continuing with basic parsing: {str(e)}")
+
+            return parsed_data
 
         except Exception as e:
             logger.error(f"Error parsing DOCX file: {str(e)}")
