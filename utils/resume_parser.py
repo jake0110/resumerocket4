@@ -6,7 +6,7 @@ import json
 import csv
 from io import StringIO
 import os
-import openai
+from openai import OpenAI
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,9 +25,10 @@ class ResumeParser:
         """Initialize the parser."""
         logger.info("Initializing ResumeParser")
         # Initialize OpenAI client
-        openai.api_key = os.getenv('OPENAI_API_KEY')
-        if not openai.api_key:
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
             logger.warning("OpenAI API key not found in environment variables")
+        self.client = OpenAI(api_key=api_key)
 
     def _extract_with_ai(self, text: str) -> Dict[str, Dict[str, str]]:
         """Use OpenAI to extract specific information from resume text."""
@@ -53,7 +54,7 @@ class ResumeParser:
             {text}
             """
 
-            response = openai.chat.completions.create(
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are a precise resume parser that extracts specific fields exactly as requested."},
