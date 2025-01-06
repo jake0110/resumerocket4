@@ -24,11 +24,9 @@ class ResumeParser:
     def __init__(self):
         """Initialize the parser."""
         logger.info("Initializing ResumeParser")
-        # Initialize OpenAI client
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
-            logger.warning("OpenAI API key not found in environment variables")
-        self.client = OpenAI(api_key=api_key)
+        # Initialize OpenAI client with minimal configuration
+        self.client = OpenAI()
+        logger.info("OpenAI client initialized successfully")
 
     def _extract_with_ai(self, text: str) -> Dict[str, Dict[str, str]]:
         """Use OpenAI to extract specific information from resume text."""
