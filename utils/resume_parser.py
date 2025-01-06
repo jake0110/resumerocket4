@@ -5,7 +5,11 @@ from typing import Dict, Optional, List
 import json
 import os
 import requests
-from docx import Document
+try:
+    from docx import Document
+except ImportError as e:
+    logging.error(f"Failed to import python-docx: {str(e)}")
+    raise ImportError("Please ensure python-docx is installed: pip install python-docx")
 
 # Configure logging with more detailed format
 logging.basicConfig(
@@ -31,7 +35,12 @@ class ResumeParser:
                 logger.error(f"File not found: {file_path}")
                 raise FileNotFoundError(f"File not found: {file_path}")
 
-            doc = Document(file_path)
+            try:
+                doc = Document(file_path)
+            except Exception as e:
+                logger.error(f"Error opening document: {str(e)}")
+                raise ValueError(f"Error opening document. Please ensure it's a valid .docx file: {str(e)}")
+
             paragraphs = []
 
             # Extract text with detailed logging
@@ -43,7 +52,7 @@ class ResumeParser:
 
             if not paragraphs:
                 logger.warning("No content found in document")
-                return {}
+                return {'contact': {}, 'experience': []}
 
             # Extract structured information
             contact_info = self._extract_contact_info(paragraphs)
@@ -66,7 +75,8 @@ class ResumeParser:
         contact_info = {
             'name': '',
             'email': '',
-            'phone': ''
+            'phone': '',
+            'location': ''
         }
 
         # Improved patterns for better matching
@@ -77,33 +87,36 @@ class ResumeParser:
             r'\+\d{1,2}\s*\d{3}[-.]?\d{3}[-.]?\d{4}',  # +1 123-456-7890
             r'\b\d{10}\b'  # 1234567890
         ]
+        location_patterns = [
+            r'(?i)(.*?,\s*[A-Z]{2}\s*\d{5}(?:-\d{4})?)',  # City, ST 12345
+            r'(?i)(.*?,\s*[A-Z]{2}(?:\s+\d{5})?)',  # City, ST
+            r'(?i)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2})'  # City, ST
+        ]
 
-        # Process first few paragraphs for name
-        for para in paragraphs[:3]:  # Only check first 3 paragraphs for name
-            text = para.strip()
-            if not text or len(text) > 50:  # Skip long paragraphs
-                continue
-
-            words = text.split()
-            if 2 <= len(words) <= 3:  # Look for 2-3 word names
-                # Check for proper capitalization and letters
-                if all(word[0].isupper() and any(c.isalpha() for c in word) for word in words):
-                    contact_info['name'] = text
-                    logger.info(f"Found name: {text}")
-                    break
-
-        # Look for email and phone throughout
+        # Name detection with improved logic
         for para in paragraphs:
             text = para.strip()
+            if not text:
+                continue
 
-            # Find email
+            # Name detection - look for professional name formats
+            words = text.split()
+            if not contact_info['name'] and len(words) <= 4:  # Allow up to 4 words for names
+                # Check if it looks like a name (proper capitalization, no special chars)
+                if all(word[0].isupper() and word[1:].islower() and word.isalpha() for word in words):
+                    # Additional validation - ensure it's not a company name or location
+                    if not any(common_word in text.lower() for common_word in ['inc', 'llc', 'corp', 'street', 'road', 'ave']):
+                        contact_info['name'] = text
+                        logger.info(f"Found name: {text}")
+
+            # Email detection
             if not contact_info['email']:
                 email_matches = re.findall(email_pattern, text.lower())
                 if email_matches:
                     contact_info['email'] = email_matches[0]
                     logger.info(f"Found email: {contact_info['email']}")
 
-            # Find phone number
+            # Phone detection
             if not contact_info['phone']:
                 for pattern in phone_patterns:
                     matches = re.findall(pattern, text)
@@ -114,6 +127,21 @@ class ResumeParser:
                             contact_info['phone'] = phone
                             logger.info(f"Found phone: {phone}")
                             break
+
+            # Location detection
+            if not contact_info['location']:
+                for pattern in location_patterns:
+                    matches = re.findall(pattern, text)
+                    if matches:
+                        location = matches[0].strip()
+                        contact_info['location'] = location
+                        logger.info(f"Found location: {location}")
+                        break
+
+        # Log missing fields for debugging
+        missing_fields = [field for field, value in contact_info.items() if not value]
+        if missing_fields:
+            logger.warning(f"Missing contact information fields: {', '.join(missing_fields)}")
 
         logger.debug(f"Extracted contact info: {contact_info}")
         return contact_info
@@ -207,6 +235,7 @@ class ResumeParser:
                 f"Name: {contact.get('name', '')}",
                 f"Email: {contact.get('email', '')}",
                 f"Phone: {contact.get('phone', '')}",
+                f"Location: {contact.get('location','')}",
                 ""
             ])
 
