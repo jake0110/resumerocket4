@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class ResumeParser:
-    """Resume parsing with improved error handling."""
+    """Resume parser with improved pattern matching and error handling."""
 
     def __init__(self, openai_api_key: Optional[str] = None):
         """Initialize the parser with optional OpenAI API key."""
@@ -41,20 +41,44 @@ class ResumeParser:
                 logger.error(f"Error opening document: {str(e)}")
                 raise ValueError(f"Error opening document. Please ensure it's a valid .docx file: {str(e)}")
 
+            # Extract text with font information for better name detection
             paragraphs = []
-
-            # Extract text with detailed logging
             for para in doc.paragraphs:
                 text = para.text.strip()
                 if text:
-                    paragraphs.append(text)
-                    logger.debug(f"Extracted paragraph: {text[:50]}...")
+                    # Check if text is likely a header by checking font properties
+                    is_header = False
+                    font_size = None
+                    is_bold = False
+
+                    for run in para.runs:
+                        if hasattr(run.font, 'size') and run.font.size:
+                            try:
+                                # Convert to points if necessary (some files store in half-points)
+                                font_size = float(run.font.size) / 12700 if run.font.size > 100 else float(run.font.size)
+                                if font_size > 12:
+                                    is_header = True
+                            except (ValueError, TypeError):
+                                pass
+
+                        if run.font.bold:
+                            is_bold = True
+                            is_header = True
+
+                    paragraphs.append({
+                        'text': text,
+                        'is_header': is_header,
+                        'font_size': font_size,
+                        'is_bold': is_bold,
+                        'original_paragraph': para
+                    })
+                    logger.debug(f"Extracted paragraph: {text[:50]}... (Header: {is_header}, Font size: {font_size}, Bold: {is_bold})")
 
             if not paragraphs:
                 logger.warning("No content found in document")
                 return {'contact': {}, 'experience': []}
 
-            # Extract structured information
+            # Extract contact information with improved detection
             contact_info = self._extract_contact_info(paragraphs)
             experience = self._extract_experience(paragraphs)
 
@@ -70,130 +94,171 @@ class ResumeParser:
             logger.error(f"Error parsing DOCX: {str(e)}", exc_info=True)
             raise
 
-    def _extract_contact_info(self, paragraphs: List[str]) -> Dict:
+    def _extract_contact_info(self, paragraphs: List[Dict]) -> Dict:
         """Extract contact information with improved pattern matching."""
         contact_info = {
-            'name': '',
-            'email': '',
-            'phone': '',
-            'location': ''
+            'name': 'No information available',
+            'email': 'No information available',
+            'phone': 'No information available',
+            'location': 'No information available'
         }
 
-        # Improved patterns for better matching
+        # Enhanced patterns for better matching
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         phone_patterns = [
             r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # 123-456-7890
             r'\(\d{3}\)\s*\d{3}[-.]?\d{4}',    # (123) 456-7890
             r'\+\d{1,2}\s*\d{3}[-.]?\d{3}[-.]?\d{4}',  # +1 123-456-7890
-            r'\b\d{10}\b'  # 1234567890
+            r'\b\d{3}[.]?\d{3}[.]?\d{4}\b'  # 123.456.7890
         ]
         location_patterns = [
+            r'(?i)(\d+\s+[A-Za-z\s]+(?:St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard)[.,]?\s+[A-Z]{2}\s*\d{5}(?:-\d{4})?)',  # Full address
             r'(?i)(.*?,\s*[A-Z]{2}\s*\d{5}(?:-\d{4})?)',  # City, ST 12345
-            r'(?i)(.*?,\s*[A-Z]{2}(?:\s+\d{5})?)',  # City, ST
-            r'(?i)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2})'  # City, ST
+            r'(?i)([A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5})',     # City, ST 12345 without comma
+            r'(?i)([A-Za-z\s]+,\s*[A-Z]{2})'              # City, ST
         ]
 
-        # Name detection with improved logic
-        for para in paragraphs:
-            text = para.strip()
-            if not text:
-                continue
+        # Process first few paragraphs for name detection
+        for i, para in enumerate(paragraphs[:5]):  # Look at first 5 paragraphs
+            text = para['text'].strip()
+            is_header = para['is_header']
+            is_bold = para.get('is_bold', False)
+            font_size = para.get('font_size')
 
-            # Name detection - look for professional name formats
-            words = text.split()
-            if not contact_info['name'] and len(words) <= 4:  # Allow up to 4 words for names
-                # Check if it looks like a name (proper capitalization, no special chars)
-                if all(word[0].isupper() and word[1:].islower() and word.isalpha() for word in words):
-                    # Additional validation - ensure it's not a company name or location
-                    if not any(common_word in text.lower() for common_word in ['inc', 'llc', 'corp', 'street', 'road', 'ave']):
+            # Enhanced name detection with improved logic
+            if contact_info['name'] == 'No information available':
+                words = text.split()
+                name_at_top = i < 2  # Name is typically in first two paragraphs
+
+                # Check for likely name format
+                if 1 <= len(words) <= 4 and (is_header or is_bold or name_at_top):
+                    # Validate name format
+                    valid_name = True
+                    for word in words:
+                        # Allow for different name formats
+                        if not (
+                            (word[0].isupper() and word[1:].islower()) or  # Standard capitalization
+                            (len(word) == 2 and word[0].isupper() and word[1] == '.') or  # Initials
+                            word.isupper() or  # All caps
+                            word in ['van', 'de', 'la', 'von', 'der']  # Common name particles
+                        ):
+                            valid_name = False
+                            break
+
+                    # Additional validation
+                    if valid_name and not any(word.lower() in text.lower() 
+                                          for word in ['resume', 'cv', 'curriculum', 'vitae', 
+                                                     'experience', 'education', 'skills']):
                         contact_info['name'] = text
                         logger.info(f"Found name: {text}")
 
             # Email detection
-            if not contact_info['email']:
+            if contact_info['email'] == 'No information available':
                 email_matches = re.findall(email_pattern, text.lower())
                 if email_matches:
                     contact_info['email'] = email_matches[0]
-                    logger.info(f"Found email: {contact_info['email']}")
+                    logger.info(f"Found email: {email_matches[0]}")
 
-            # Phone detection
-            if not contact_info['phone']:
+            # Phone detection with improved cleaning
+            if contact_info['phone'] == 'No information available':
                 for pattern in phone_patterns:
                     matches = re.findall(pattern, text)
                     if matches:
-                        # Clean up phone format
-                        phone = re.sub(r'[^\d+]', '', matches[0])
-                        if len(phone) >= 10:
+                        # Clean phone number format
+                        phone = matches[0]
+                        # Keep only digits and plus sign
+                        phone = ''.join(c for c in phone if c.isdigit() or c == '+')
+                        if len(phone) >= 10:  # Valid phone numbers should have at least 10 digits
                             contact_info['phone'] = phone
                             logger.info(f"Found phone: {phone}")
                             break
 
-            # Location detection
-            if not contact_info['location']:
+            # Location detection with improved patterns
+            if contact_info['location'] == 'No information available':
                 for pattern in location_patterns:
                     matches = re.findall(pattern, text)
                     if matches:
-                        location = matches[0].strip()
+                        location = matches[0]
+                        if isinstance(location, tuple):
+                            location = location[0]
+                        location = location.strip()
+                        # Normalize spaces and remove extra commas
+                        location = re.sub(r'\s+', ' ', location)
+                        location = re.sub(r',\s*,', ',', location)
+                        location = location.strip(' ,')
                         contact_info['location'] = location
                         logger.info(f"Found location: {location}")
                         break
 
-        # Log missing fields for debugging
-        missing_fields = [field for field, value in contact_info.items() if not value]
+        # Log any missing fields
+        missing_fields = [field for field, value in contact_info.items() 
+                         if value == 'No information available']
         if missing_fields:
             logger.warning(f"Missing contact information fields: {', '.join(missing_fields)}")
 
-        logger.debug(f"Extracted contact info: {contact_info}")
         return contact_info
 
-    def _extract_experience(self, paragraphs: List[str]) -> List[Dict]:
+    def _extract_experience(self, paragraphs: List[Dict]) -> List[Dict]:
         """Extract experience entries with improved detection."""
         experiences = []
         current_exp = None
         in_experience_section = False
 
-        experience_headers = ['experience', 'work history', 'employment']
+        try:
+            for para in paragraphs:
+                text = para['text'].strip()
+                is_header = para['is_header']
 
-        for para in paragraphs:
-            text = para.strip()
-            if not text:
-                continue
+                if not text:
+                    continue
 
-            # Detect experience section
-            if any(header in text.lower() for header in experience_headers):
-                in_experience_section = True
-                logger.debug("Found experience section")
-                continue
+                # Detect experience section with more variations
+                if any(keyword in text.lower() for keyword in 
+                      ['experience', 'work history', 'employment', 'professional experience',
+                       'career history', 'work experience']):
+                    in_experience_section = True
+                    logger.debug(f"Found experience section: {text}")
+                    continue
 
-            if not in_experience_section:
-                continue
+                if not in_experience_section:
+                    continue
 
-            # New experience entry detection
-            if text[0].isupper() and len(text.split()) <= 4:
-                if current_exp:
-                    experiences.append(current_exp)
+                # New experience entry detection with improved logic
+                if (is_header or 
+                    (text[0].isupper() and len(text.split()) <= 4) or
+                    any(text.lower().startswith(prefix) for prefix in ['senior ', 'lead ', 'chief '])):
 
-                current_exp = {
-                    'company': text,
-                    'position': '',
-                    'duration': '',
-                    'description': []
-                }
-            elif current_exp:
-                # Categorize the line
-                if not current_exp['position'] and text[0].isupper():
-                    current_exp['position'] = text
-                elif not current_exp['duration'] and any(x in text.lower() for x in ['present', '20', '19']):
-                    current_exp['duration'] = text
-                else:
-                    current_exp['description'].append(text)
+                    if current_exp and current_exp.get('company'):
+                        experiences.append(current_exp)
 
-        # Add final experience entry
-        if current_exp:
-            experiences.append(current_exp)
+                    current_exp = {
+                        'company': text,
+                        'position': '',
+                        'duration': '',
+                        'description': []
+                    }
+                elif current_exp:
+                    # Improved categorization of lines
+                    if not current_exp['position'] and text[0].isupper():
+                        current_exp['position'] = text
+                    elif not current_exp['duration'] and re.search(r'\b(19|20)\d{2}\b|present|current', text.lower()):
+                        current_exp['duration'] = text
+                    else:
+                        # Remove bullet points and normalize
+                        cleaned_text = re.sub(r'^[-•●\s]+', '', text).strip()
+                        if cleaned_text:
+                            current_exp['description'].append(cleaned_text)
 
-        logger.info(f"Extracted {len(experiences)} experience entries")
-        return experiences
+            # Add final experience entry
+            if current_exp and current_exp.get('company'):
+                experiences.append(current_exp)
+
+            logger.info(f"Extracted {len(experiences)} experience entries")
+            return experiences
+
+        except Exception as e:
+            logger.error(f"Error extracting experience: {str(e)}", exc_info=True)
+            return []
 
     def enhance_with_ai(self, parsed_data: Dict) -> Dict:
         """Enhance parsed data with AI analysis."""
