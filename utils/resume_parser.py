@@ -3,7 +3,6 @@ from typing import Dict, List, Optional, Tuple
 import re
 from datetime import datetime
 import json
-import requests
 import csv
 from io import StringIO
 
@@ -18,12 +17,11 @@ except ImportError as e:
     raise ImportError("python-docx is required but not properly installed. Please install it using 'pip install python-docx'")
 
 class ResumeParser:
-    """Advanced resume parsing with intelligent section detection and OpenAI analysis."""
+    """Resume parsing with structured field extraction."""
 
-    def __init__(self, openai_api_key: Optional[str] = None):
-        """Initialize the parser with enhanced section detection patterns."""
+    def __init__(self):
+        """Initialize the parser with section detection patterns."""
         logger.info("Initializing ResumeParser")
-        self.openai_api_key = openai_api_key
         self.section_headers = {
             'contact': [
                 r'contact\s*info(rmation)?',
@@ -52,62 +50,6 @@ class ResumeParser:
             ]
         }
 
-    def analyze_with_openai(self, text: str) -> Dict[str, any]:
-        """
-        Use OpenAI to analyze resume content and provide insights.
-
-        Args:
-            text (str): Resume content to analyze
-
-        Returns:
-            Dict with analysis results including key skills, experience summary, and recommendations
-        """
-        if not self.openai_api_key:
-            logger.warning("OpenAI API key not provided, skipping analysis")
-            return {}
-
-        try:
-            headers = {
-                "Authorization": f"Bearer {self.openai_api_key}",
-                "Content-Type": "application/json"
-            }
-
-            prompt = f"""Analyze this resume content and provide structured feedback:
-            {text}
-
-            Please provide analysis in the following JSON format:
-            {{
-                "key_skills": [list of most important skills],
-                "experience_summary": "brief overview of experience",
-                "improvement_suggestions": [list of specific suggestions],
-                "best_suited_roles": [list of recommended job titles],
-                "experience_level": "junior/mid/senior based on experience"
-            }}"""
-
-            data = {
-                "model": "gpt-3.5-turbo",
-                "messages": [{"role": "user", "content": prompt}],
-                "response_format": {"type": "json_object"}
-            }
-
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=30
-            )
-
-            if response.status_code == 200:
-                result = response.json()
-                return json.loads(result['choices'][0]['message']['content'])
-            else:
-                logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
-                return {}
-
-        except Exception as e:
-            logger.error(f"Error analyzing resume with OpenAI: {str(e)}")
-            return {}
-
     def _normalize_text(self, text: str) -> str:
         """Normalize text for consistent processing."""
         if not text:
@@ -116,7 +58,6 @@ class ResumeParser:
         text = ' '.join(text.split())
         text = re.sub(r'[•●○▪▫◦⦿⦾⭐►▻▸▹➜➤➢➣➪➱➾]', '•', text)
         return text
-
 
     def _identify_section(self, text: str) -> Optional[str]:
         """Identify section from text using regex patterns."""
@@ -146,13 +87,13 @@ class ResumeParser:
         if email_match:
             contact_info['email'] = email_match.group()
 
-        # Extract phone with international format support
+        # Extract phone
         phone_pattern = r'\b(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b'
         phone_match = re.search(phone_pattern, text)
         if phone_match:
             contact_info['phone'] = phone_match.group()
 
-        # Extract location (City, State/Province, Country)
+        # Extract location
         location_pattern = r'\b[A-Za-z\s]+,\s*[A-Za-z\s]+(?:,\s*[A-Za-z\s]+)?\b'
         location_match = re.search(location_pattern, text)
         if location_match:
@@ -164,11 +105,10 @@ class ResumeParser:
         if linkedin_match:
             contact_info['linkedin'] = "linkedin.com/in/" + linkedin_match.group().split('/')[-2]
 
-        # Extract name (assuming it's at the beginning of the document)
-        name_lines = text.split('\n')[:3]  # Check first 3 lines
+        # Extract name (assuming it's at the beginning)
+        name_lines = text.split('\n')[:3]
         for line in name_lines:
             line = line.strip()
-            # Name should be 2-4 words, each capitalized, no special characters
             if re.match(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}$', line):
                 contact_info['name'] = line
                 break
@@ -186,16 +126,13 @@ class ResumeParser:
         if not paragraphs:
             return most_recent
 
-        current_entry = None
         date_pattern = r'\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s*(?:\d{4})'
 
         for para in paragraphs:
             if not para.strip():
                 continue
 
-            # Check if this is a position entry (contains a date)
             if re.search(date_pattern, para):
-                # Extract dates
                 dates = re.findall(date_pattern, para)
                 duration = ''
                 if len(dates) >= 2:
@@ -203,7 +140,6 @@ class ResumeParser:
                 elif len(dates) == 1:
                     duration = f"{dates[0]} - Present"
 
-                # Extract company and position
                 company_position = re.sub(date_pattern, '', para).strip()
                 company = position = 'No information available'
 
@@ -214,7 +150,6 @@ class ResumeParser:
                 else:
                     company = company_position
 
-                # Since we want the most recent position, we return the first one found
                 return {
                     'company': company,
                     'position': position,
@@ -287,31 +222,19 @@ class ResumeParser:
         return list(set(skills))  # Remove duplicates
 
     def parse_docx(self, file_path: str, output_format: str = 'json') -> str:
-        """
-        Parse DOCX resume file and extract only specific requested fields.
-
-        Args:
-            file_path (str): Path to the DOCX file
-            output_format (str): 'json' or 'csv'
-
-        Returns:
-            str: Parsed resume data in specified format with only requested fields
-        """
-        logger.info(f"Attempting to parse DOCX file: {file_path}")
+        """Parse DOCX resume file and extract only specific requested fields."""
+        logger.info(f"Parsing DOCX file: {file_path}")
 
         try:
             doc = Document(file_path)
-            sections = {'contact': [], 'experience': [], 'unknown': []}
+            sections = {'contact': [], 'experience': [], 'education': [], 'skills': [], 'unknown': []}
             current_section = None
-            full_text = []
 
-            # First pass: Collect content by section
             for paragraph in doc.paragraphs:
                 text = paragraph.text.strip()
                 if not text:
                     continue
 
-                full_text.append(text)
                 section = self._identify_section(text)
                 if section:
                     current_section = section
@@ -322,11 +245,11 @@ class ResumeParser:
                 else:
                     sections['unknown'].append(text)
 
-            # Extract required information
             contact_info = self._extract_contact_info('\n'.join(sections['contact'] + sections['unknown']))
             recent_position = self._extract_most_recent_position(sections['experience'])
+            education_info = self._extract_education(sections['education'])
+            skills_info = self._extract_skills(sections['skills'])
 
-            # Combine only the requested fields
             parsed_data = {
                 # Contact Information
                 'name': contact_info['name'],
@@ -337,10 +260,11 @@ class ResumeParser:
                 # Most Recent Position
                 'most_recent_company': recent_position['company'],
                 'most_recent_title': recent_position['position'],
-                'most_recent_dates': recent_position['duration']
+                'most_recent_dates': recent_position['duration'],
+                'education': education_info,
+                'skills': skills_info
             }
 
-            # Format output according to preference
             if output_format.lower() == 'csv':
                 output = StringIO()
                 writer = csv.DictWriter(output, fieldnames=parsed_data.keys())
