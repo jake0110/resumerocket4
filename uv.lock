@@ -1287,7 +1287,7 @@ requires-dist = [
     { name = "trafilatura", specifier = ">=2.0.0" },
     { name = "twilio", specifier = ">=9.4.1" },
     { name = "typing", specifier = ">=3.10.0.0" },
-    { name = "typing-extensions", specifier = "==4.9.0" },
+    { name = "typing-extensions", specifier = ">=4.0.0" },
 ]
 
 [[package]]

@@ -2,65 +2,60 @@ import os
 import sys
 import tempfile
 import logging
-import traceback
-from openai import OpenAI, OpenAIError
-import streamlit as st
+from typing import Optional
 
-# Configure logging
+# Configure logging first
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('app.log'),
         logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger(__name__)
 
-def test_openai_connection():
+logger.debug("Starting application...")
+
+# Import required packages with error handling
+try:
+    logger.debug("Importing required packages...")
+    import streamlit as st
+    from openai import OpenAI
+    logger.debug("Successfully imported all required packages")
+except ImportError as e:
+    logger.error(f"Failed to import required packages: {str(e)}")
+    sys.exit(1)
+
+def test_openai_connection(api_key: Optional[str] = None) -> bool:
     """Test OpenAI API connection."""
+    if not api_key:
+        return False
+
     try:
-        api_key = st.text_input("Enter your OpenAI API Key", type="password", key="openai_api_key")
-        if api_key and st.button("Test OpenAI Connection"):
-            try:
-                if not api_key.startswith('sk-') or len(api_key) < 20:
-                    st.error("Invalid API key format. Please enter a valid OpenAI API key.")
-                    return False
+        if not api_key.startswith('sk-'):
+            st.error("Invalid API key format. Please enter a valid OpenAI API key.")
+            return False
 
-                client = OpenAI(api_key=api_key)
-                logger.info("Attempting to connect to OpenAI API")
-                st.info("Testing OpenAI API connection...")
-
-                response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[{
-                        "role": "user",
-                        "content": "Hello, this is a test message. Please respond with 'OpenAI connection successful!'"
-                    }],
-                    max_tokens=50
-                )
-                st.success(f"OpenAI API Response: {response.choices[0].message.content}")
-                logger.info("OpenAI API test successful")
-                return True
-            except OpenAIError as e:
-                error_msg = f"OpenAI API Error: {str(e)}"
-                logger.error(error_msg)
-                st.error(error_msg)
-                return False
-            except Exception as e:
-                error_msg = f"Unexpected error during OpenAI API test: {str(e)}"
-                logger.error(error_msg)
-                st.error(error_msg)
-                return False
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{
+                "role": "user",
+                "content": "Test connection"
+            }],
+            max_tokens=10
+        )
+        return True
     except Exception as e:
-        error_msg = f"Error in test_openai_connection: {str(e)}"
-        logger.error(error_msg)
-        st.error(error_msg)
+        logger.error(f"OpenAI API Error: {str(e)}")
+        st.error(f"OpenAI API Error: {str(e)}")
         return False
 
 def main():
+    """Main application entry point."""
     try:
-        logger.info("Starting ResumeRocket5 application")
+        logger.debug("Setting up Streamlit page configuration...")
+        # Configure page
         st.set_page_config(
             page_title="ResumeRocket5 - Resume Analyzer",
             layout="wide"
@@ -69,36 +64,37 @@ def main():
         st.title("ResumeRocket5 - Resume Analyzer")
         st.write("Upload your resume for intelligent analysis using Airparser and OpenAI")
 
-        # Add OpenAI test section
+        # OpenAI API Test Section
         st.subheader("OpenAI API Test")
-        api_test_result = test_openai_connection()
-        if api_test_result:
-            st.success("✅ OpenAI API connection verified")
+        api_key = st.text_input("Enter your OpenAI API Key", type="password")
 
-        # File upload section with error handling
+        if st.button("Test Connection"):
+            if test_openai_connection(api_key):
+                st.success("✅ OpenAI API connection verified")
+
+        # File Upload Section
+        st.subheader("Resume Upload")
+        st.info("✨ We're transitioning to Airparser for enhanced resume parsing!")
+
         uploaded_file = st.file_uploader(
             "Upload your resume",
-            type=['docx', 'pdf'],  # Added PDF support for Airparser
+            type=['docx', 'pdf'],
             help="Upload a Word document (.docx) or PDF file"
         )
 
         if uploaded_file:
-            logger.info(f"Processing uploaded file: {uploaded_file.name}")
+            file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Size in MB
 
-            # File size validation
-            file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Convert to MB
             if file_size > 10:
                 st.error("File size exceeds 10MB limit. Please upload a smaller file.")
-                logger.warning(f"File size {file_size}MB exceeds limit")
                 return
 
-            # Save uploaded file temporarily
             tmp_file_path = None
             try:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
                     tmp_file.write(uploaded_file.getvalue())
                     tmp_file_path = tmp_file.name
-                    logger.debug(f"Saved temporary file at: {tmp_file_path}")
+                    logger.debug(f"Saved uploaded file to {tmp_file_path}")
 
                 st.success("Resume uploaded successfully!")
                 st.info("Your resume will be processed through Airparser for detailed analysis.")
@@ -113,26 +109,21 @@ def main():
                 st.info("Processing through Airparser... This feature will be available soon.")
 
             except Exception as e:
-                error_msg = f"Error processing document: {str(e)}"
-                logger.error(error_msg)
-                logger.error(traceback.format_exc())
-                st.error(error_msg)
-                st.error("Please ensure your document is properly formatted and try again.")
+                logger.error(f"Error processing file: {str(e)}")
+                st.error("Error processing your file. Please try again.")
 
             finally:
-                # Cleanup temporary file
                 if tmp_file_path and os.path.exists(tmp_file_path):
                     try:
                         os.unlink(tmp_file_path)
-                        logger.debug("Temporary file cleaned up")
+                        logger.debug("Cleaned up temporary file")
                     except Exception as e:
                         logger.error(f"Error cleaning up temporary file: {str(e)}")
 
     except Exception as e:
-        error_msg = f"Application error: {str(e)}"
-        logger.error(error_msg)
-        logger.error(traceback.format_exc())
+        logger.error(f"Application error: {str(e)}")
         st.error("An unexpected error occurred. Please try again.")
 
 if __name__ == "__main__":
+    logger.debug("Starting main application...")
     main()
