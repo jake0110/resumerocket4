@@ -2,18 +2,33 @@ import streamlit as st
 import os
 import tempfile
 import logging
+import time
 from utils.resume_parser import process_resume
 
 logger = logging.getLogger(__name__)
+
+def check_parser_status():
+    """Check and update the parsing status in session state."""
+    if 'parser_job_id' in st.session_state:
+        from utils.resume_parser import AirparserMakeIntegration
+        parser = AirparserMakeIntegration()
+        result = parser.check_parsing_status(st.session_state.parser_job_id)
+
+        if result['status'] == 'completed':
+            st.session_state.parsed_data = result.get('data', {})
+            st.session_state.parser_status = 'completed'
+        elif result['status'] == 'error':
+            st.session_state.parser_status = 'error'
+            st.session_state.parser_error = result.get('message', 'Unknown error')
 
 def render_personal_info():
     """Render the personal information form with file upload."""
     with st.form("personal_info_form"):
         st.subheader("Personal Information")
 
-        # File upload section with better visual feedback
+        # File upload section
         st.markdown("### Resume Upload")
-        st.info("✨ We're transitioning to Airparser for enhanced resume parsing!")
+        st.info("✨ Upload your resume for intelligent parsing with Airparser!")
         uploaded_file = st.file_uploader(
             "Upload your resume (DOCX or PDF)",
             type=['docx', 'pdf'],
@@ -32,17 +47,20 @@ def render_personal_info():
                 if st.form_submit_button("Process Resume"):
                     try:
                         with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
-                            tmp_file.write(uploaded_file.getvalue())
+                            file_content = uploaded_file.getvalue()
+                            tmp_file.write(file_content)
                             tmp_file_path = tmp_file.name
                             logger.debug(f"Saved uploaded file to {tmp_file_path}")
 
                             # Process with Airparser integration
-                            result = process_resume(tmp_file_path)
+                            result = process_resume(tmp_file_path, file_content, uploaded_file.name)
                             if result['status'] == 'error':
                                 st.error(result['message'])
                             else:
-                                st.info("Your resume will be processed through Airparser soon!")
-                                st.info("Integration with Airparser via Zapier is under development.")
+                                st.session_state.parser_job_id = result['job_id']
+                                st.session_state.parser_status = 'pending'
+                                st.info("✨ Your resume has been submitted for parsing!")
+                                st.info("Please wait while we process your document...")
 
                             # Clean up temporary file
                             os.unlink(tmp_file_path)
@@ -52,22 +70,38 @@ def render_personal_info():
                         logger.error(f"Error processing file: {str(e)}")
                         st.error("Error processing your file. Please try again.")
 
-        # Manual input fields as fallback
+        # Check parser status if a job is in progress
+        if 'parser_status' in st.session_state:
+            if st.session_state.parser_status == 'pending':
+                check_parser_status()
+                st.info("Processing your resume... Please wait.")
+            elif st.session_state.parser_status == 'completed':
+                st.success("✅ Resume parsing completed!")
+                parsed_data = st.session_state.parsed_data
+
+                # Auto-fill form fields with parsed data
+                name = parsed_data.get('name', '')
+                email = parsed_data.get('email', '')
+                phone = parsed_data.get('phone', '')
+            elif st.session_state.parser_status == 'error':
+                st.error(f"Error parsing resume: {st.session_state.get('parser_error', 'Unknown error')}")
+
+        # Manual input fields (auto-filled when parsing completes)
         name = st.text_input(
             "Full Name",
-            value="",
+            value=st.session_state.get('parsed_data', {}).get('name', ''),
             key="name_input"
         )
 
         email = st.text_input(
             "Email",
-            value="",
+            value=st.session_state.get('parsed_data', {}).get('email', ''),
             key="email_input"
         )
 
         phone = st.text_input(
             "Phone",
-            value="",
+            value=st.session_state.get('parsed_data', {}).get('phone', ''),
             key="phone_input"
         )
 
@@ -91,13 +125,19 @@ def render_personal_info():
             st.success("✅ Personal information saved!")
 
 def render_education():
-    """Placeholder for education section."""
-    st.info("Education section will be populated from Airparser analysis.")
+    """Display education section with parsed data."""
+    st.info("Education details will be populated from parsed resume data.")
+    if 'parsed_data' in st.session_state and 'education' in st.session_state.parsed_data:
+        st.write(st.session_state.parsed_data['education'])
 
 def render_experience():
-    """Placeholder for experience section."""
-    st.info("Experience section will be populated from Airparser analysis.")
+    """Display experience section with parsed data."""
+    st.info("Experience details will be populated from parsed resume data.")
+    if 'parsed_data' in st.session_state and 'experience' in st.session_state.parsed_data:
+        st.write(st.session_state.parsed_data['experience'])
 
 def render_skills():
-    """Placeholder for skills section."""
-    st.info("Skills section will be populated from Airparser analysis.")
+    """Display skills section with parsed data."""
+    st.info("Skills will be populated from parsed resume data.")
+    if 'parsed_data' in st.session_state and 'skills' in st.session_state.parsed_data:
+        st.write(st.session_state.parsed_data['skills'])
