@@ -167,9 +167,10 @@ def main():
                     )
                     
                     if response.status_code == 200:
-                    st.success("Application submitted successfully!")
-                    st.balloons()
-                else:
+                        st.success("Application submitted successfully!")
+                        st.balloons()
+                    else:
+                        st.error("Failed to submit application. Please try again.")
                     st.error("Failed to submit application. Please try again.")
 
     except Exception as e:
