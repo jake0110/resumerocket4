@@ -23,7 +23,6 @@ logger.debug("Starting application...")
 try:
     logger.debug("Importing required packages...")
     import streamlit as st
-    from openai import OpenAI
     logger.debug("Successfully imported all required packages")
 except ImportError as e:
     logger.error(f"Failed to import required packages: {str(e)}")
@@ -73,31 +72,6 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
 
     except Exception as e:
         logger.error(f"Error sending data to webhook: {str(e)}")
-        return False
-
-def test_openai_connection(api_key: Optional[str] = None) -> bool:
-    """Test OpenAI API connection."""
-    if not api_key:
-        return False
-
-    try:
-        if not api_key.startswith('sk-'):
-            st.error("Invalid API key format. Please enter a valid OpenAI API key.")
-            return False
-
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{
-                "role": "user",
-                "content": "Test connection"
-            }],
-            max_tokens=10
-        )
-        return True
-    except Exception as e:
-        logger.error(f"OpenAI API Error: {str(e)}")
-        st.error(f"OpenAI API Error: {str(e)}")
         return False
 
 def main():
@@ -172,15 +146,6 @@ def main():
                     st.balloons()
                 else:
                     st.error("Failed to submit application. Please try again.")
-
-        # OpenAI API Test Section (Optional)
-        with st.expander("OpenAI API Configuration"):
-            st.subheader("OpenAI API Test")
-            api_key = st.text_input("Enter your OpenAI API Key", type="password")
-
-            if st.button("Test Connection"):
-                if test_openai_connection(api_key):
-                    st.success("✅ OpenAI API connection verified")
 
     except Exception as e:
         logger.error(f"Application error: {str(e)}")
