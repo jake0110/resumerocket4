@@ -137,7 +137,7 @@ def main():
                     st.error("Please fill in all required fields")
                     return
 
-                # Process form submission
+                # Process form submission with debug logging
                 form_data = {
                     'first_name': st.session_state.get("first_name", ""),
                     'last_name': st.session_state.get("last_name", ""),
@@ -149,6 +149,9 @@ def main():
                     'date_created': datetime.datetime.now().isoformat()
                 }
 
+                # Log the payload for debugging
+                logger.debug(f"Sending payload to webhook: {json.dumps(form_data)}")
+                
                 file_data = None
                 if uploaded_file:
                     file_data = (

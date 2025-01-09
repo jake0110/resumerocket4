@@ -46,8 +46,11 @@ class AirparserMakeIntegration:
             response = requests.post(
                 self.make_webhook_url,
                 files=files,
+                json=form_data,  # Send as JSON payload
                 timeout=30
             )
+            
+            logger.debug(f"Webhook response: {response.status_code} - {response.text}")
 
             if response.status_code == 200:
                 try:
