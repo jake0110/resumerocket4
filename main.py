@@ -39,16 +39,19 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
 
         logger.debug(f"Preparing to send data to webhook")
 
-        # Prepare the payload
+        # Prepare the payload with exact field names matching Google Sheets
         payload = {
+            "date_created": datetime.now().isoformat(),
             "first_name": form_data.get("first_name", ""),
             "last_name": form_data.get("last_name", ""),
             "email": form_data.get("email", ""),
             "phone": form_data.get("phone", ""),
             "city": form_data.get("city", ""),
             "state": form_data.get("state", ""),
-            "professional_level": form_data.get("professional_level", ""),
-            "date_created": datetime.now().isoformat()
+            "linkedin_url": form_data.get("linkedin_url", ""),
+            "experience_company1": form_data.get("experience_company1", ""),
+            "experience_title1": form_data.get("experience_title1", ""),
+            "experience_dates1": form_data.get("experience_dates1", ""),
         }
 
         files = None
@@ -56,6 +59,10 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             files = {
                 'resume': (file_data[0], file_data[1], file_data[2])
             }
+            # Add file-related fields
+            payload["_filename_"] = file_data[0]
+            payload["_name_"] = os.path.splitext(file_data[0])[0]
+            payload["_download_url_"] = ""  # Will be populated by Make.com
 
         logger.debug("Sending request to webhook")
         # Send request to webhook
@@ -105,26 +112,35 @@ def main():
                 email = st.text_input("Email", key="email")
                 phone = st.text_input("Phone", key="phone")
                 city = st.text_input("City", key="city")
+                linkedin_url = st.text_input("LinkedIn URL", key="linkedin_url")
 
             with col2:
                 states = ["Select State", "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
                 state = st.selectbox("State", states, key="state")
 
-                role_types = ["Select Role Type", "Entry Level", "Individual Contributor", "Team Lead", "Manager", "Director", "Vice President", "Executive"]
-                professional_level = st.selectbox("Professional Level", role_types, key="professional_level")
+                st.subheader("Professional Experience")
+                experience_company1 = st.text_input("Company Name", key="experience_company1")
+                experience_title1 = st.text_input("Job Title", key="experience_title1")
+                experience_dates1 = st.text_input("Employment Dates", key="experience_dates1", 
+                                                help="e.g., Jan 2020 - Present")
 
                 # File Upload Section
                 uploaded_file = st.file_uploader(
                     "Upload your resume",
                     type=['docx', 'pdf'],
-                    help="Upload a Word document (.docx) or PDF file"
+                    help="Upload a Word document (.docx) or PDF file",
+                    key="_filename_"
                 )
 
             # Submit button
             submit_button = st.form_submit_button("Submit Application")
 
             if submit_button:
-                if not all([first_name, last_name, email, phone, city, state != "Select State", professional_level != "Select Role Type"]):
+                if not all([
+                    first_name, last_name, email, phone, city, 
+                    state != "Select State", experience_company1, 
+                    experience_title1, experience_dates1
+                ]):
                     st.error("Please fill in all required fields")
                     return
 
@@ -136,7 +152,10 @@ def main():
                     "phone": phone,
                     "city": city,
                     "state": state,
-                    "professional_level": professional_level
+                    "linkedin_url": linkedin_url,
+                    "experience_company1": experience_company1,
+                    "experience_title1": experience_title1,
+                    "experience_dates1": experience_dates1
                 }
 
                 file_data = None

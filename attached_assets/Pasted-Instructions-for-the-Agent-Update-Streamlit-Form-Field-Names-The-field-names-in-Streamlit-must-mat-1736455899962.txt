@@ -1,0 +1,57 @@
+Instructions for the Agent:
+Update Streamlit Form Field Names: The field names in Streamlit must match the Google Sheets column names exactly. Update the forms.py file in the Streamlit project to use these names:
+
+date_created
+first_name
+last_name
+city
+state
+email
+phone
+linkedin_url
+experience_company1
+experience_title1
+experience_dates1
+_download_url_
+_name_
+_filename_
+Modify forms.py to Include These Fields: Here’s an example of the updated Streamlit form code:
+
+python
+Copy code
+with st.form("personal_info_form"):
+    st.text_input("First Name", key="first_name")
+    st.text_input("Last Name", key="last_name")
+    st.text_input("Email", key="email")
+    st.text_input("Phone", key="phone")
+    st.text_input("City", key="city")
+    st.selectbox("State", options=["Select", "NY", "NJ", "CA"], key="state")
+    st.text_input("LinkedIn URL", key="linkedin_url")
+    
+    # Add additional fields as necessary
+    st.text_input("Experience Company 1", key="experience_company1")
+    st.text_input("Experience Title 1", key="experience_title1")
+    st.text_input("Experience Dates 1", key="experience_dates1")
+    uploaded_file = st.file_uploader("Upload Resume", type=["pdf", "docx"], key="_filename_")
+
+    # Capture submission date
+    st.text_input("Date Created", value=datetime.datetime.now().isoformat(), key="date_created")
+
+    if st.form_submit_button("Submit Application"):
+        form_data = {
+            "first_name": st.session_state.get("first_name", ""),
+            "last_name": st.session_state.get("last_name", ""),
+            "email": st.session_state.get("email", ""),
+            "phone": st.session_state.get("phone", ""),
+            "city": st.session_state.get("city", ""),
+            "state": st.session_state.get("state", ""),
+            "linkedin_url": st.session_state.get("linkedin_url", ""),
+            "experience_company1": st.session_state.get("experience_company1", ""),
+            "experience_title1": st.session_state.get("experience_title1", ""),
+            "experience_dates1": st.session_state.get("experience_dates1", ""),
+            "_filename_": uploaded_file.name if uploaded_file else "",
+            "date_created": datetime.datetime.now().isoformat(),
+        }
+        # Send data to the webhook
+        send_to_webhook(form_data, uploaded_file.getvalue() if uploaded_file else None)
+Ensure Webhooks Receives These Fields: After updating the Streamlit form, verify that the data sent to Webhooks contains the same field names listed above. This ensures proper mapping to Google Sheets.
