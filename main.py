@@ -171,9 +171,9 @@ def main():
                         st.balloons()
                     else:
                         st.error("Failed to submit application. Please try again.")
-                    st.error("Failed to submit application. Please try again.")
-
-    except Exception as e:
+                except Exception as e:
+                    logger.error(f"Error sending data to webhook: {str(e)}")
+                    st.error("An unexpected error occurred. Please try again.")
         logger.error(f"Application error: {str(e)}")
         st.error("An unexpected error occurred. Please try again.")
 
