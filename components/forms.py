@@ -29,11 +29,11 @@ def send_to_webhook(form_data, file_content=None):
     if not webhook_url:
         st.error("Webhook URL not configured")
         return False
-        
+
     files = {}
     if file_content:
         files = {'resume': ('resume.pdf', file_content, 'application/pdf')}
-        
+
     try:
         response = requests.post(
             webhook_url,
@@ -50,7 +50,7 @@ def render_personal_info():
     """Render the personal information form with file upload."""
     with st.form("personal_info_form"):
         st.subheader("Personal Information")
-        
+
         # Add timestamp
         current_time = datetime.datetime.now().isoformat()
 
@@ -133,6 +133,9 @@ def render_personal_info():
             key="phone_input"
         )
 
+        city = st.text_input("City", key="city_input")
+        state = st.text_input("State", key="state_input")
+
         # Professional level dropdown
         level_options = ['Entry Level', 'Mid Level', 'Senior Level', 'Executive']
         prof_level = st.selectbox(
@@ -154,11 +157,11 @@ def render_personal_info():
                 'professional_level': prof_level,
                 'date_created': current_time
             }
-            
+
             file_content = None
             if uploaded_file:
                 file_content = uploaded_file.getvalue()
-            
+
             if send_to_webhook(form_data, file_content):
                 st.success("✅ Information submitted successfully!")
             else:
