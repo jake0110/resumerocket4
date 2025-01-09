@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 import json
 import requests
-from datetime import datetime
+import datetime
 
 # Configure logging first
 logging.basicConfig(
@@ -146,7 +146,7 @@ def main():
                     'city': st.session_state.get("city", ""),
                     'state': st.session_state.get("state", ""),
                     'professional_level': st.session_state.get("prof_level", "Entry Level"),
-                    'date_created': datetime.datetime.now().isoformat()
+                    'date_created': datetime.now().isoformat()
                 }
 
                 # Log the payload for debugging
