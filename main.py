@@ -64,6 +64,23 @@ def main():
         st.title("ResumeRocket5 - Resume Analyzer")
         st.write("Upload your resume for intelligent analysis using Airparser and OpenAI")
 
+        # Personal Information Form
+        st.subheader("Personal Information")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            name = st.text_input("Full Name", placeholder="John Doe")
+            email = st.text_input("Email", placeholder="john@example.com")
+            phone = st.text_input("Phone", placeholder="(555) 123-4567")
+            city = st.text_input("City", placeholder="New York")
+        
+        with col2:
+            states = ["Select State", "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+            state = st.selectbox("State", states)
+            
+            role_types = ["Select Role Type", "Entry Level", "Individual Contributor", "Team Lead", "Manager", "Director", "Vice President", "Executive"]
+            role_type = st.selectbox("Role Type", role_types)
+
         # OpenAI API Test Section
         st.subheader("OpenAI API Test")
         api_key = st.text_input("Enter your OpenAI API Key", type="password")
