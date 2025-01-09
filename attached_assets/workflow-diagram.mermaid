@@ -1,0 +1,55 @@
+graph TD
+    subgraph User["User Interface (Replit)"]
+        A1[Web Application]
+        A2[Text Fields]
+        A3[Dropdowns]
+        A4[File Upload]
+        A1 --> A2
+        A1 --> A3
+        A1 --> A4
+    end
+
+    subgraph Processing["Data Processing"]
+        B1[Airparser]
+        B2[Make.com]
+        B3[Resume Parser]
+        B1 --> B3
+        B3 --> B2
+    end
+
+    subgraph Storage["Data Storage"]
+        C1[Google Sheets]
+        C2[Parsed Data]
+        C3[User Input Data]
+        C1 --> C2
+        C1 --> C3
+    end
+
+    subgraph Analysis["Analysis Engine"]
+        D1[Python Logic]
+        D2[Data Fetch]
+        D3[Analysis Rules]
+        D4[Feedback Generation]
+        D1 --> D2
+        D2 --> D3
+        D3 --> D4
+    end
+
+    %% Main Flow
+    A4 -->|Resume Upload| B1
+    A2 -->|Direct Input| B2
+    A3 -->|Selections| B2
+    B2 -->|Data Integration| C1
+    C1 -->|Fetch Data| D1
+    D4 -->|Display Results| A1
+
+    %% Styling
+    classDef primary fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:white
+    classDef secondary fill:#3498db,stroke:#2980b9,stroke-width:2px,color:white
+    classDef storage fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:white
+    classDef analysis fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:white
+
+    class A1,A2,A3,A4 primary
+    class B1,B2,B3 secondary
+    class C1,C2,C3 storage
+    class D1,D2,D3,D4 analysis
