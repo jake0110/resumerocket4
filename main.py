@@ -146,22 +146,27 @@ def main():
                     'city': st.session_state.get("city", ""),
                     'state': st.session_state.get("state", ""),
                     'professional_level': st.session_state.get("prof_level", "Entry Level"),
-                    'date_created': datetime.now().isoformat()
+                    'date_created': datetime.datetime.now().isoformat()
                 }
 
-                # Log the payload for debugging
-                logger.debug(f"Sending payload to webhook: {json.dumps(form_data)}")
+                logger.debug(f"Preparing to send payload: {json.dumps(form_data)}")
                 
-                file_data = None
+                files = None
                 if uploaded_file:
-                    file_data = (
-                        uploaded_file.name,
-                        uploaded_file.getvalue(),
-                        uploaded_file.type
-                    )
+                    files = {
+                        'resume': (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)
+                    }
 
-                # Send to webhook
-                if send_to_webhook(form_data, file_data):
+                try:
+                    webhook_url = st.secrets["general"]["MAKE_WEBHOOK_URL"]
+                    response = requests.post(
+                        webhook_url,
+                        json=form_data,
+                        files=files,
+                        timeout=30
+                    )
+                    
+                    if response.status_code == 200:
                     st.success("Application submitted successfully!")
                     st.balloons()
                 else:
