@@ -1,6 +1,5 @@
 import os
 import sys
-import tempfile
 import logging
 from typing import Optional
 import json
@@ -28,8 +27,8 @@ except ImportError as e:
     logger.error(f"Failed to import required packages: {str(e)}")
     sys.exit(1)
 
-def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
-    """Send form data and file to Make.com webhook."""
+def send_to_webhook(form_data: dict) -> bool:
+    """Send form data to Make.com webhook."""
     try:
         # Get webhook URL from secrets
         webhook_url = st.secrets["general"]["MAKE_WEBHOOK_URL"]
@@ -41,35 +40,19 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
 
         # Prepare the payload with exact field names matching Google Sheets
         payload = {
-            "date_created": datetime.now().isoformat(),
             "first_name": form_data.get("first_name", ""),
             "last_name": form_data.get("last_name", ""),
             "email": form_data.get("email", ""),
             "phone": form_data.get("phone", ""),
             "city": form_data.get("city", ""),
-            "state": form_data.get("state", ""),
-            "linkedin_url": form_data.get("linkedin_url", ""),
-            "experience_company1": form_data.get("experience_company1", ""),
-            "experience_title1": form_data.get("experience_title1", ""),
-            "experience_dates1": form_data.get("experience_dates1", ""),
+            "state": form_data.get("state", "")
         }
-
-        files = None
-        if file_data:
-            files = {
-                'resume': (file_data[0], file_data[1], file_data[2])
-            }
-            # Add file-related fields
-            payload["_filename_"] = file_data[0]
-            payload["_name_"] = os.path.splitext(file_data[0])[0]
-            payload["_download_url_"] = ""  # Will be populated by Make.com
 
         logger.debug("Sending request to webhook")
         # Send request to webhook
         response = requests.post(
             webhook_url,
             data={"payload": json.dumps(payload)},
-            files=files,
             timeout=30
         )
 
@@ -99,38 +82,24 @@ def main():
         )
 
         st.title("ResumeRocket5 - Resume Analyzer")
-        st.write("Upload your resume for intelligent analysis using Airparser and OpenAI")
+        st.write("Enter your information below")
 
         # Create a form for submission
-        with st.form("resume_form"):
+        with st.form("personal_info_form"):
             st.subheader("Personal Information")
+
             col1, col2 = st.columns(2)
 
             with col1:
                 first_name = st.text_input("First Name", key="first_name")
                 last_name = st.text_input("Last Name", key="last_name")
                 email = st.text_input("Email", key="email")
-                phone = st.text_input("Phone", key="phone")
-                city = st.text_input("City", key="city")
-                linkedin_url = st.text_input("LinkedIn URL", key="linkedin_url")
 
             with col2:
-                states = ["Select State", "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+                phone = st.text_input("Phone", key="phone")
+                city = st.text_input("City", key="city")
+                states = ["Select", "NY", "NJ", "CA"] #Reduced state list for example
                 state = st.selectbox("State", states, key="state")
-
-                st.subheader("Professional Experience")
-                experience_company1 = st.text_input("Company Name", key="experience_company1")
-                experience_title1 = st.text_input("Job Title", key="experience_title1")
-                experience_dates1 = st.text_input("Employment Dates", key="experience_dates1", 
-                                                help="e.g., Jan 2020 - Present")
-
-                # File Upload Section
-                uploaded_file = st.file_uploader(
-                    "Upload your resume",
-                    type=['docx', 'pdf'],
-                    help="Upload a Word document (.docx) or PDF file",
-                    key="_filename_"
-                )
 
             # Submit button
             submit_button = st.form_submit_button("Submit Application")
@@ -138,8 +107,7 @@ def main():
             if submit_button:
                 if not all([
                     first_name, last_name, email, phone, city, 
-                    state != "Select State", experience_company1, 
-                    experience_title1, experience_dates1
+                    state != "Select"
                 ]):
                     st.error("Please fill in all required fields")
                     return
@@ -151,23 +119,11 @@ def main():
                     "email": email,
                     "phone": phone,
                     "city": city,
-                    "state": state,
-                    "linkedin_url": linkedin_url,
-                    "experience_company1": experience_company1,
-                    "experience_title1": experience_title1,
-                    "experience_dates1": experience_dates1
+                    "state": state
                 }
 
-                file_data = None
-                if uploaded_file:
-                    file_data = (
-                        uploaded_file.name,
-                        uploaded_file.getvalue(),
-                        uploaded_file.type
-                    )
-
                 # Send to webhook
-                if send_to_webhook(form_data, file_data):
+                if send_to_webhook(form_data):
                     st.success("Application submitted successfully!")
                     st.balloons()
                 else:
