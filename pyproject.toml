@@ -5,13 +5,13 @@ description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
     "logging==0.4.9.6",
-    "openai>=1.0.0",
+    "openai==1.6.1",
     "pypdf2>=3.0.1",
     "python-docx>=0.8.11",
-    "python-dotenv>=1.0.0",
+    "python-dotenv==1.0.0",
     "reportlab>=4.2.5",
-    "requests>=2.31.0",
-    "streamlit==1.28.1",
+    "requests==2.31.0",
+    "streamlit==1.29.0",
     "trafilatura>=2.0.0",
     "twilio>=9.4.1",
     "typing-extensions>=4.0.0",

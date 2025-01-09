@@ -3,6 +3,9 @@ import sys
 import tempfile
 import logging
 from typing import Optional
+import json
+import requests
+from datetime import datetime
 
 # Configure logging first
 logging.basicConfig(
@@ -25,6 +28,52 @@ try:
 except ImportError as e:
     logger.error(f"Failed to import required packages: {str(e)}")
     sys.exit(1)
+
+def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
+    """Send form data and file to Make.com webhook."""
+    try:
+        # Get webhook URL from secrets
+        webhook_url = st.secrets.get("MAKE_WEBHOOK_URL")
+        if not webhook_url:
+            logger.error("Make.com webhook URL not configured")
+            return False
+
+        # Prepare the payload
+        payload = {
+            "first_name": form_data.get("first_name", ""),
+            "last_name": form_data.get("last_name", ""),
+            "email": form_data.get("email", ""),
+            "phone": form_data.get("phone", ""),
+            "city": form_data.get("city", ""),
+            "state": form_data.get("state", ""),
+            "professional_level": form_data.get("professional_level", ""),
+            "date_created": datetime.now().isoformat()
+        }
+
+        files = None
+        if file_data:
+            files = {
+                'resume': (file_data[0], file_data[1], file_data[2])
+            }
+
+        # Send request to webhook
+        response = requests.post(
+            webhook_url,
+            data={"payload": json.dumps(payload)},
+            files=files,
+            timeout=30
+        )
+
+        if response.status_code == 200:
+            logger.info("Successfully sent data to Make.com webhook")
+            return True
+        else:
+            logger.error(f"Failed to send data to webhook. Status code: {response.status_code}")
+            return False
+
+    except Exception as e:
+        logger.error(f"Error sending data to webhook: {str(e)}")
+        return False
 
 def test_openai_connection(api_key: Optional[str] = None) -> bool:
     """Test OpenAI API connection."""
@@ -64,78 +113,74 @@ def main():
         st.title("ResumeRocket5 - Resume Analyzer")
         st.write("Upload your resume for intelligent analysis using Airparser and OpenAI")
 
-        # Personal Information Form
-        st.subheader("Personal Information")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            name = st.text_input("Full Name", placeholder="John Doe")
-            email = st.text_input("Email", placeholder="john@example.com")
-            phone = st.text_input("Phone", placeholder="(555) 123-4567")
-            city = st.text_input("City", placeholder="New York")
-        
-        with col2:
-            states = ["Select State", "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
-            state = st.selectbox("State", states)
-            
-            role_types = ["Select Role Type", "Entry Level", "Individual Contributor", "Team Lead", "Manager", "Director", "Vice President", "Executive"]
-            role_type = st.selectbox("Role Type", role_types)
+        # Create a form for submission
+        with st.form("resume_form"):
+            st.subheader("Personal Information")
+            col1, col2 = st.columns(2)
 
-        # OpenAI API Test Section
-        st.subheader("OpenAI API Test")
-        api_key = st.text_input("Enter your OpenAI API Key", type="password")
+            with col1:
+                first_name = st.text_input("First Name", key="first_name")
+                last_name = st.text_input("Last Name", key="last_name")
+                email = st.text_input("Email", key="email")
+                phone = st.text_input("Phone", key="phone")
+                city = st.text_input("City", key="city")
 
-        if st.button("Test Connection"):
-            if test_openai_connection(api_key):
-                st.success("✅ OpenAI API connection verified")
+            with col2:
+                states = ["Select State", "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+                state = st.selectbox("State", states, key="state")
 
-        # File Upload Section
-        st.subheader("Resume Upload")
-        st.info("✨ We're transitioning to Airparser for enhanced resume parsing!")
+                role_types = ["Select Role Type", "Entry Level", "Individual Contributor", "Team Lead", "Manager", "Director", "Vice President", "Executive"]
+                professional_level = st.selectbox("Professional Level", role_types, key="professional_level")
 
-        uploaded_file = st.file_uploader(
-            "Upload your resume",
-            type=['docx', 'pdf'],
-            help="Upload a Word document (.docx) or PDF file"
-        )
+                # File Upload Section
+                uploaded_file = st.file_uploader(
+                    "Upload your resume",
+                    type=['docx', 'pdf'],
+                    help="Upload a Word document (.docx) or PDF file"
+                )
 
-        if uploaded_file:
-            file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Size in MB
+            # Submit button
+            submit_button = st.form_submit_button("Submit Application")
 
-            if file_size > 10:
-                st.error("File size exceeds 10MB limit. Please upload a smaller file.")
-                return
+            if submit_button:
+                if not all([first_name, last_name, email, phone, city, state != "Select State", professional_level != "Select Role Type"]):
+                    st.error("Please fill in all required fields")
+                    return
 
-            tmp_file_path = None
-            try:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
-                    tmp_file.write(uploaded_file.getvalue())
-                    tmp_file_path = tmp_file.name
-                    logger.debug(f"Saved uploaded file to {tmp_file_path}")
+                # Process form submission
+                form_data = {
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "email": email,
+                    "phone": phone,
+                    "city": city,
+                    "state": state,
+                    "professional_level": professional_level
+                }
 
-                st.success("Resume uploaded successfully!")
-                st.info("Your resume will be processed through Airparser for detailed analysis.")
+                file_data = None
+                if uploaded_file:
+                    file_data = (
+                        uploaded_file.name,
+                        uploaded_file.getvalue(),
+                        uploaded_file.type
+                    )
 
-                # Display file information
-                st.write({
-                    "Filename": uploaded_file.name,
-                    "File size": f"{file_size:.2f} MB",
-                    "File type": uploaded_file.type
-                })
+                # Send to webhook
+                if send_to_webhook(form_data, file_data):
+                    st.success("Application submitted successfully!")
+                    st.balloons()
+                else:
+                    st.error("Failed to submit application. Please try again.")
 
-                st.info("Processing through Airparser... This feature will be available soon.")
+        # OpenAI API Test Section (Optional)
+        with st.expander("OpenAI API Configuration"):
+            st.subheader("OpenAI API Test")
+            api_key = st.text_input("Enter your OpenAI API Key", type="password")
 
-            except Exception as e:
-                logger.error(f"Error processing file: {str(e)}")
-                st.error("Error processing your file. Please try again.")
-
-            finally:
-                if tmp_file_path and os.path.exists(tmp_file_path):
-                    try:
-                        os.unlink(tmp_file_path)
-                        logger.debug("Cleaned up temporary file")
-                    except Exception as e:
-                        logger.error(f"Error cleaning up temporary file: {str(e)}")
+            if st.button("Test Connection"):
+                if test_openai_connection(api_key):
+                    st.success("✅ OpenAI API connection verified")
 
     except Exception as e:
         logger.error(f"Application error: {str(e)}")
