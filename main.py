@@ -139,12 +139,14 @@ def main():
 
                 # Process form submission
                 form_data = {
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "email": email,
-                    "phone": phone,
-                    "city": city,
-                    "state": state
+                    'first_name': st.session_state.get("first_name", ""),
+                    'last_name': st.session_state.get("last_name", ""),
+                    'email': st.session_state.get("email", ""),
+                    'phone': st.session_state.get("phone", ""),
+                    'city': st.session_state.get("city", ""),
+                    'state': st.session_state.get("state", ""),
+                    'professional_level': st.session_state.get("prof_level", "Entry Level"),
+                    'date_created': datetime.datetime.now().isoformat()
                 }
 
                 file_data = None
