@@ -62,7 +62,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         # Send request to webhook
         response = requests.post(
             webhook_url,
-            data={"payload": json.dumps(payload)},
+            json=payload,  # Send as JSON directly
             files=files,
             timeout=30
         )
