@@ -174,9 +174,14 @@ def main():
                 except Exception as e:
                     logger.error(f"Error sending data to webhook: {str(e)}")
                     st.error("An unexpected error occurred. Please try again.")
+    except Exception as e:
         logger.error(f"Application error: {str(e)}")
         st.error("An unexpected error occurred. Please try again.")
 
 if __name__ == "__main__":
-    logger.debug("Starting main application...")
-    main()
+    try:
+        logger.debug("Starting main application...")
+        main()
+    except Exception as e:
+        logger.error(f"Application failed to start: {str(e)}")
+        st.error("Application failed to start. Please try again.")
