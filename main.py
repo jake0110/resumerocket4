@@ -32,10 +32,12 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     """Send form data and file to Make.com webhook."""
     try:
         # Get webhook URL from secrets
-        webhook_url = st.secrets.get("MAKE_WEBHOOK_URL")
+        webhook_url = st.secrets["general"]["MAKE_WEBHOOK_URL"]
         if not webhook_url:
             logger.error("Make.com webhook URL not configured")
             return False
+
+        logger.debug(f"Preparing to send data to webhook")
 
         # Prepare the payload
         payload = {
@@ -55,6 +57,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
                 'resume': (file_data[0], file_data[1], file_data[2])
             }
 
+        logger.debug("Sending request to webhook")
         # Send request to webhook
         response = requests.post(
             webhook_url,
@@ -63,11 +66,15 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             timeout=30
         )
 
+        logger.debug(f"Webhook response status code: {response.status_code}")
+        logger.debug(f"Webhook response content: {response.text}")
+
         if response.status_code == 200:
             logger.info("Successfully sent data to Make.com webhook")
             return True
         else:
             logger.error(f"Failed to send data to webhook. Status code: {response.status_code}")
+            logger.error(f"Response content: {response.text}")
             return False
 
     except Exception as e:
