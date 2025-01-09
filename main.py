@@ -27,7 +27,7 @@ except ImportError as e:
     logger.error(f"Failed to import required packages: {str(e)}")
     sys.exit(1)
 
-def send_to_webhook(form_data: dict) -> bool:
+def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     """Send form data to Make.com webhook."""
     try:
         # Get webhook URL from secrets
@@ -48,11 +48,22 @@ def send_to_webhook(form_data: dict) -> bool:
             "state": form_data.get("state", "")
         }
 
+        files = None
+        if file_data:
+            files = {
+                'resume': (file_data[0], file_data[1], file_data[2])
+            }
+            # Add file-related fields
+            payload["_filename_"] = file_data[0]
+            payload["_name_"] = os.path.splitext(file_data[0])[0]
+            payload["_download_url_"] = ""  # Will be populated by Make.com
+
         logger.debug("Sending request to webhook")
         # Send request to webhook
         response = requests.post(
             webhook_url,
             data={"payload": json.dumps(payload)},
+            files=files,
             timeout=30
         )
 
@@ -98,8 +109,22 @@ def main():
             with col2:
                 phone = st.text_input("Phone", key="phone")
                 city = st.text_input("City", key="city")
-                states = ["Select", "NY", "NJ", "CA"] #Reduced state list for example
+                states = [
+                    "Select", "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", 
+                    "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
+                    "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", 
+                    "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", 
+                    "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+                ]
                 state = st.selectbox("State", states, key="state")
+
+            # File Upload Section
+            uploaded_file = st.file_uploader(
+                "Upload your resume",
+                type=['docx', 'pdf'],
+                help="Upload a Word document (.docx) or PDF file",
+                key="_filename_"
+            )
 
             # Submit button
             submit_button = st.form_submit_button("Submit Application")
@@ -122,8 +147,16 @@ def main():
                     "state": state
                 }
 
+                file_data = None
+                if uploaded_file:
+                    file_data = (
+                        uploaded_file.name,
+                        uploaded_file.getvalue(),
+                        uploaded_file.type
+                    )
+
                 # Send to webhook
-                if send_to_webhook(form_data):
+                if send_to_webhook(form_data, file_data):
                     st.success("Application submitted successfully!")
                     st.balloons()
                 else:
