@@ -3,6 +3,8 @@ import os
 import tempfile
 import logging
 import time
+import datetime
+import requests
 from utils.resume_parser import process_resume
 
 logger = logging.getLogger(__name__)
@@ -21,10 +23,36 @@ def check_parser_status():
             st.session_state.parser_status = 'error'
             st.session_state.parser_error = result.get('message', 'Unknown error')
 
+def send_to_webhook(form_data, file_content=None):
+    """Send form data to Make.com webhook"""
+    webhook_url = os.getenv('MAKE_WEBHOOK_URL')
+    if not webhook_url:
+        st.error("Webhook URL not configured")
+        return False
+        
+    files = {}
+    if file_content:
+        files = {'resume': ('resume.pdf', file_content, 'application/pdf')}
+        
+    try:
+        response = requests.post(
+            webhook_url,
+            data=form_data,
+            files=files,
+            timeout=30
+        )
+        return response.status_code == 200
+    except Exception as e:
+        logger.error(f"Error sending to webhook: {str(e)}")
+        return False
+
 def render_personal_info():
     """Render the personal information form with file upload."""
     with st.form("personal_info_form"):
         st.subheader("Personal Information")
+        
+        # Add timestamp
+        current_time = datetime.datetime.now().isoformat()
 
         # File upload section
         st.markdown("### Resume Upload")
@@ -115,14 +143,26 @@ def render_personal_info():
         )
 
         # Save button for manual edits
-        if st.form_submit_button("Save Personal Info"):
-            st.session_state.personal_info = {
-                'name': name,
+        if st.form_submit_button("Submit"):
+            form_data = {
+                'first_name': name.split()[0] if name else '',
+                'last_name': ' '.join(name.split()[1:]) if name and len(name.split()) > 1 else '',
                 'email': email,
                 'phone': phone,
-                'professional_level': prof_level
+                'city': city,
+                'state': state,
+                'professional_level': prof_level,
+                'date_created': current_time
             }
-            st.success("✅ Personal information saved!")
+            
+            file_content = None
+            if uploaded_file:
+                file_content = uploaded_file.getvalue()
+            
+            if send_to_webhook(form_data, file_content):
+                st.success("✅ Information submitted successfully!")
+            else:
+                st.error("Failed to submit information. Please try again.")
 
 def render_education():
     """Display education section with parsed data."""
