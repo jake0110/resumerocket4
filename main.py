@@ -31,7 +31,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     """Send form data to Make.com webhook."""
     try:
         # Get webhook URL from secrets
-        webhook_url = st.secrets["general"]["MAKE_WEBHOOK_URL"]
+        webhook_url = "https://hook.us2.make.com/rwax3krv6kqd8pcf6t59ngpdaltu88kz"  # Updated webhook URL
         if not webhook_url:
             logger.error("Make.com webhook URL not configured")
             return False
