@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 import json
 import requests
-import datetime
+from datetime import datetime
 
 # Configure logging first
 logging.basicConfig(
@@ -38,14 +38,12 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
 
         logger.debug(f"Preparing to send data to webhook")
 
-        # Prepare the payload with exact field names matching Google Sheets
+        # Prepare the payload 
         payload = {
             "first_name": form_data.get("first_name", ""),
             "last_name": form_data.get("last_name", ""),
             "email": form_data.get("email", ""),
-            "phone": form_data.get("phone", ""),
-            "city": form_data.get("city", ""),
-            "state": form_data.get("state", "")
+            "professional_level": form_data.get("professional_level", "")
         }
 
         files = None
@@ -85,7 +83,6 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
 def main():
     """Main application entry point."""
     try:
-        logger.debug("Setting up Streamlit page configuration...")
         # Configure page
         st.set_page_config(
             page_title="ResumeRocket5 - Resume Analyzer",
@@ -93,87 +90,71 @@ def main():
         )
 
         st.title("ResumeRocket5 - Resume Analyzer")
-        st.write("Enter your information below")
+        st.write("Please fill out the form below")
 
-        # Create a form for submission
-        with st.form("personal_info_form"):
-            st.subheader("Personal Information")
-
+        # Create form with required fields
+        with st.form("resume_form"):
             col1, col2 = st.columns(2)
 
             with col1:
                 first_name = st.text_input("First Name", key="first_name")
                 last_name = st.text_input("Last Name", key="last_name")
-                email = st.text_input("Email", key="email")
 
             with col2:
-                phone = st.text_input("Phone", key="phone")
-                city = st.text_input("City", key="city")
-                states = [
-                    "Select", "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", 
-                    "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
-                    "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", 
-                    "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", 
-                    "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+                email = st.text_input("Email", key="email")
+                level_options = [
+                    "Select Level",
+                    "Individual Contributor",
+                    "Manager",
+                    "Client Manager",
+                    "Selling Principal/Partner",
+                    "Practice Leader"
                 ]
-                state = st.selectbox("State", states, key="state")
+                level = st.selectbox("Professional Level", level_options, key="level")
 
             # File Upload Section
             uploaded_file = st.file_uploader(
                 "Upload your resume",
                 type=['docx', 'pdf'],
                 help="Upload a Word document (.docx) or PDF file",
-                key="_filename_"
+                key="resume"
             )
 
             # Submit button
             submit_button = st.form_submit_button("Submit Application")
 
             if submit_button:
+                # Validate form
                 if not all([
-                    first_name, last_name, email, phone, city, 
-                    state != "Select"
+                    first_name,
+                    last_name,
+                    email,
+                    level != "Select Level"
                 ]):
                     st.error("Please fill in all required fields")
                     return
 
-                # Process form submission with debug logging
+                if not uploaded_file:
+                    st.error("Please upload your resume")
+                    return
+
+                # Process form data
                 form_data = {
-                    'first_name': st.session_state.get("first_name", ""),
-                    'last_name': st.session_state.get("last_name", ""),
-                    'email': st.session_state.get("email", ""),
-                    'phone': st.session_state.get("phone", ""),
-                    'city': st.session_state.get("city", ""),
-                    'state': st.session_state.get("state", ""),
-                    'professional_level': st.session_state.get("prof_level", "Entry Level"),
-                    'date_created': datetime.datetime.now().isoformat()
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email': email,
+                    'professional_level': level,
+                    'date_created': datetime.now().isoformat()
                 }
 
-                logger.debug(f"Preparing to send payload: {json.dumps(form_data)}")
+                logger.info(f"Form submitted successfully: {form_data}")
                 
-                files = None
-                if uploaded_file:
-                    files = {
-                        'resume': (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)
-                    }
+                if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
+                    st.success("Application submitted successfully!")
+                    st.balloons()
+                else:
+                    st.error("Failed to submit application. Please try again.")
 
-                try:
-                    webhook_url = st.secrets["general"]["MAKE_WEBHOOK_URL"]
-                    response = requests.post(
-                        webhook_url,
-                        json=form_data,
-                        files=files,
-                        timeout=30
-                    )
-                    
-                    if response.status_code == 200:
-                        st.success("Application submitted successfully!")
-                        st.balloons()
-                    else:
-                        st.error("Failed to submit application. Please try again.")
-                except Exception as e:
-                    logger.error(f"Error sending data to webhook: {str(e)}")
-                    st.error("An unexpected error occurred. Please try again.")
     except Exception as e:
         logger.error(f"Application error: {str(e)}")
         st.error("An unexpected error occurred. Please try again.")
