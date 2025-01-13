@@ -115,10 +115,16 @@ def render_personal_info():
                 st.error(f"Error parsing resume: {st.session_state.get('parser_error', 'Unknown error')}")
 
         # Manual input fields (auto-filled when parsing completes)
-        name = st.text_input(
-            "Full Name",
-            value=st.session_state.get('parsed_data', {}).get('name', ''),
-            key="name_input"
+        first_name = st.text_input(
+            "First Name",
+            value=st.session_state.get('parsed_data', {}).get('first_name', ''),
+            key="first_name_input"
+        )
+
+        last_name = st.text_input(
+            "Last Name",
+            value=st.session_state.get('parsed_data', {}).get('last_name', ''),
+            key="last_name_input"
         )
 
         email = st.text_input(
@@ -127,22 +133,28 @@ def render_personal_info():
             key="email_input"
         )
 
-        phone = st.text_input(
-            "Phone",
-            value=st.session_state.get('parsed_data', {}).get('phone', ''),
-            key="phone_input"
-        )
-
-        city = st.text_input("City", key="city_input")
-        state = st.text_input("State", key="state_input")
-
         # Professional level dropdown
-        level_options = ['Entry Level', 'Mid Level', 'Senior Level', 'Executive']
+        level_options = [
+            'Individual Contributor', 
+            'Manager', 
+            'Client Manager', 
+            'Selling Principal/Partner', 
+            'Practice Leader'
+        ]
         prof_level = st.selectbox(
             "Professional Level",
             options=level_options,
             index=0,
             key="prof_level"
+        )
+
+        # File upload section placed here for better flow
+        st.markdown("### Resume Upload")
+        uploaded_file = st.file_uploader(
+            "Upload your resume (DOCX or PDF)",
+            type=['docx', 'pdf'],
+            key="resume_uploader",
+            help="Upload your resume for processing"
         )
 
         # Save button for manual edits
