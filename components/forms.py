@@ -114,22 +114,19 @@ def render_personal_info():
             elif st.session_state.parser_status == 'error':
                 st.error(f"Error parsing resume: {st.session_state.get('parser_error', 'Unknown error')}")
 
-        # Manual input fields (auto-filled when parsing completes)
+        # Manual input fields
         first_name = st.text_input(
             "First Name",
-            value=st.session_state.get('parsed_data', {}).get('first_name', ''),
             key="first_name_input"
         )
 
         last_name = st.text_input(
-            "Last Name",
-            value=st.session_state.get('parsed_data', {}).get('last_name', ''),
+            "Last Name", 
             key="last_name_input"
         )
 
         email = st.text_input(
             "Email",
-            value=st.session_state.get('parsed_data', {}).get('email', ''),
             key="email_input"
         )
 
@@ -146,15 +143,6 @@ def render_personal_info():
             options=level_options,
             index=0,
             key="prof_level"
-        )
-
-        # File upload section placed here for better flow
-        st.markdown("### Resume Upload")
-        uploaded_file = st.file_uploader(
-            "Upload your resume (DOCX or PDF)",
-            type=['docx', 'pdf'],
-            key="resume_uploader",
-            help="Upload your resume for processing"
         )
 
         # Save button for manual edits
