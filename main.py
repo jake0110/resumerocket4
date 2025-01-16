@@ -30,43 +30,54 @@ except ImportError as e:
 def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     """Send form data to webhook with improved logging and validation."""
     try:
-        # Get webhook URL from secrets
+        # Get webhook URL from secrets or use default
         webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2k4qlhg/"
+        logger.info("Using webhook URL: " + webhook_url)
+
+        # Validate webhook URL
         if not webhook_url:
             logger.error("Webhook URL not configured")
             return False
 
         logger.debug("Preparing to send data to webhook")
+        logger.info("Form Data Validation Results:")
 
-        # Prepare the payload according to specified structure
+        # Detailed logging of form fields
+        logger.info("Raw form data received:")
+        logger.info(json.dumps(form_data, indent=2))
+
+        # Prepare the payload with validation
         payload = {
-            "first_name": form_data.get("first_name", ""),
-            "last_name": form_data.get("last_name", ""),
-            "email": form_data.get("email", ""),
-            "level": form_data.get("professional_level", ""),
-            "resume": ""  # File content will be added separately
+            "first_name": form_data.get("first_name", "").strip(),
+            "last_name": form_data.get("last_name", "").strip(),
+            "email": form_data.get("email", "").strip(),
+            "level": form_data.get("professional_level", "").strip(),
+            "timestamp": datetime.now().isoformat()
         }
 
-        # Log field validation results with actual values
+        # Log field validation results
         for key, value in payload.items():
             if value:
                 logger.info(f"✅ {key}: {value}")
             else:
                 logger.warning(f"❌ {key}: Missing or empty")
 
+        # Handle file data
         files = None
         if file_data:
+            file_name, file_content, file_type = file_data
+            logger.info(f"✅ Resume file: {file_name} ({len(file_content)} bytes, type: {file_type})")
             files = {
-                'resume': (file_data[0], file_data[1], file_data[2])
+                'resume': (file_name, file_content, file_type)
             }
-            logger.info(f"✅ Resume file included: {file_data[0]} ({len(file_data[1])} bytes)")
         else:
             logger.warning("❌ No resume file attached")
 
-        logger.debug(f"Sending data to webhook: {json.dumps(payload, indent=2)}")
+        # Log the final payload
+        logger.debug(f"Final payload to webhook: {json.dumps(payload, indent=2)}")
         logger.debug(f"File included: {True if files else False}")
 
-        # Send request to webhook with improved timeout
+        # Send request to webhook
         response = requests.post(
             webhook_url,
             json=payload,
@@ -74,6 +85,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             timeout=30
         )
 
+        # Log response details
         logger.debug(f"Webhook response status code: {response.status_code}")
         logger.debug(f"Webhook response content: {response.text}")
 
@@ -101,7 +113,6 @@ def main():
         st.title("ResumeRocket5 - Resume Analyzer")
         st.write("Please fill out the form below")
 
-        # Create form with required fields
         with st.form("resume_form"):
             col1, col2 = st.columns(2)
 
@@ -134,12 +145,7 @@ def main():
 
             if submit_button:
                 # Validate form
-                if not all([
-                    first_name,
-                    last_name,
-                    email,
-                    level != "Select Level"
-                ]):
+                if not all([first_name, last_name, email, level != "Select Level"]):
                     st.error("Please fill in all required fields")
                     return
 
@@ -156,7 +162,7 @@ def main():
                     'date_created': datetime.now().isoformat()
                 }
 
-                logger.info(f"Form submitted successfully: {form_data}")
+                logger.info(f"Form submitted with data: {json.dumps(form_data, indent=2)}")
 
                 if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
                     st.success("Application submitted successfully!")
