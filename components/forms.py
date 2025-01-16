@@ -9,13 +9,32 @@ import requests
 logger = logging.getLogger(__name__)
 
 def send_to_webhook(form_data, file_content=None):
-    """Send form data to Zapier webhook"""
+    """Send form data to Zapier webhook for processing resume submissions.
+
+    This function sends the form data and optional file content to a configured Zapier webhook.
+    The webhook (https://hooks.zapier.com/hooks/catch/274092/2k4qlhg/) processes submissions
+    and can trigger various automated workflows.
+
+    Args:
+        form_data (dict): A dictionary containing form fields:
+            - first_name (str): Applicant's first name
+            - last_name (str): Applicant's last name  
+            - email (str): Contact email address
+            - level (str): Professional level/title
+        file_content (bytes, optional): Binary content of uploaded resume file
+
+    Returns:
+        bool: True if webhook submission was successful, False otherwise
+
+    Raises:
+        requests.exceptions.RequestException: For network/API errors
+    """
     webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2k4qlhg/"
     if not webhook_url:
-        st.error("Webhook URL not configured")
+        st.error("Webhook URL not configured") 
         return False
 
-    # Prepare payload according to the specified structure
+    # Prepare payload according to the specified structure 
     payload = {
         "first_name": form_data.get("first_name", ""),
         "last_name": form_data.get("last_name", ""),
@@ -30,7 +49,7 @@ def send_to_webhook(form_data, file_content=None):
     try:
         response = requests.post(
             webhook_url,
-            json=payload,
+            json=payload, 
             files=files,
             timeout=30
         )
