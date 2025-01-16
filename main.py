@@ -28,15 +28,15 @@ except ImportError as e:
     sys.exit(1)
 
 def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
-    """Send form data to Zapier webhook."""
+    """Send form data to webhook with improved logging and validation."""
     try:
         # Get webhook URL from secrets
         webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2k4qlhg/"
         if not webhook_url:
-            logger.error("Zapier webhook URL not configured")
+            logger.error("Webhook URL not configured")
             return False
 
-        logger.debug(f"Preparing to send data to webhook")
+        logger.debug("Preparing to send data to webhook")
 
         # Prepare the payload according to specified structure
         payload = {
@@ -44,14 +44,24 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             "last_name": form_data.get("last_name", ""),
             "email": form_data.get("email", ""),
             "level": form_data.get("professional_level", ""),
-            "resume": "" #Added to match required structure.  Content will be added via files.
+            "resume": ""  # File content will be added separately
         }
+
+        # Log field validation results
+        for key, value in payload.items():
+            if value:
+                logger.info(f"✅ {key}: {value}")
+            else:
+                logger.warning(f"❌ {key}: Missing or empty")
 
         files = None
         if file_data:
             files = {
                 'resume': (file_data[0], file_data[1], file_data[2])
             }
+            logger.info(f"✅ Resume file included: {file_data[0]}")
+        else:
+            logger.warning("❌ No resume file attached")
 
         logger.debug(f"Sending data to webhook: {json.dumps(payload)}")
         logger.debug(f"File included: {True if files else False}")
@@ -68,7 +78,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         logger.debug(f"Webhook response content: {response.text}")
 
         if response.status_code == 200:
-            logger.info("Successfully sent data to Zapier webhook")
+            logger.info("Successfully sent data to webhook")
             return True
         else:
             logger.error(f"Failed to send data to webhook. Status code: {response.status_code}")
