@@ -5,30 +5,23 @@ import logging
 import time
 import datetime
 import requests
-from utils.resume_parser import process_resume
 
 logger = logging.getLogger(__name__)
 
-def check_parser_status():
-    """Check and update the parsing status in session state."""
-    if 'parser_job_id' in st.session_state:
-        from utils.resume_parser import AirparserMakeIntegration
-        parser = AirparserMakeIntegration()
-        result = parser.check_parsing_status(st.session_state.parser_job_id)
-
-        if result['status'] == 'completed':
-            st.session_state.parsed_data = result.get('data', {})
-            st.session_state.parser_status = 'completed'
-        elif result['status'] == 'error':
-            st.session_state.parser_status = 'error'
-            st.session_state.parser_error = result.get('message', 'Unknown error')
-
 def send_to_webhook(form_data, file_content=None):
-    """Send form data to Make.com webhook"""
-    webhook_url = os.getenv('MAKE_WEBHOOK_URL')
+    """Send form data to Zapier webhook"""
+    webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2k4qlhg/"
     if not webhook_url:
         st.error("Webhook URL not configured")
         return False
+
+    # Prepare payload according to the specified structure
+    payload = {
+        "first_name": form_data.get("first_name", ""),
+        "last_name": form_data.get("last_name", ""),
+        "email": form_data.get("email", ""),
+        "level": form_data.get("professional_level", "")
+    }
 
     files = {}
     if file_content:
@@ -37,7 +30,7 @@ def send_to_webhook(form_data, file_content=None):
     try:
         response = requests.post(
             webhook_url,
-            data=form_data,
+            json=payload,
             files=files,
             timeout=30
         )
@@ -53,66 +46,6 @@ def render_personal_info():
 
         # Add timestamp
         current_time = datetime.datetime.now().isoformat()
-
-        # File upload section
-        st.markdown("### Resume Upload")
-        st.info("✨ Upload your resume for intelligent parsing with Airparser!")
-        uploaded_file = st.file_uploader(
-            "Upload your resume (DOCX or PDF)",
-            type=['docx', 'pdf'],
-            key="resume_uploader",
-            help="Upload your resume for Airparser analysis"
-        )
-
-        if uploaded_file is not None:
-            st.info(f"File selected: {uploaded_file.name}")
-            file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Convert to MB
-            if file_size > 10:  # 10MB limit
-                st.warning(f"File size ({file_size:.1f}MB) exceeds 10MB limit")
-            else:
-                st.success(f"File size: {file_size:.1f}MB (Ready for processing)")
-
-                if st.form_submit_button("Process Resume"):
-                    try:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as tmp_file:
-                            file_content = uploaded_file.getvalue()
-                            tmp_file.write(file_content)
-                            tmp_file_path = tmp_file.name
-                            logger.debug(f"Saved uploaded file to {tmp_file_path}")
-
-                            # Process with Airparser integration
-                            result = process_resume(tmp_file_path, file_content, uploaded_file.name)
-                            if result['status'] == 'error':
-                                st.error(result['message'])
-                            else:
-                                st.session_state.parser_job_id = result['job_id']
-                                st.session_state.parser_status = 'pending'
-                                st.info("✨ Your resume has been submitted for parsing!")
-                                st.info("Please wait while we process your document...")
-
-                            # Clean up temporary file
-                            os.unlink(tmp_file_path)
-                            logger.debug("Cleaned up temporary file")
-
-                    except Exception as e:
-                        logger.error(f"Error processing file: {str(e)}")
-                        st.error("Error processing your file. Please try again.")
-
-        # Check parser status if a job is in progress
-        if 'parser_status' in st.session_state:
-            if st.session_state.parser_status == 'pending':
-                check_parser_status()
-                st.info("Processing your resume... Please wait.")
-            elif st.session_state.parser_status == 'completed':
-                st.success("✅ Resume parsing completed!")
-                parsed_data = st.session_state.parsed_data
-
-                # Auto-fill form fields with parsed data
-                name = parsed_data.get('name', '')
-                email = parsed_data.get('email', '')
-                phone = parsed_data.get('phone', '')
-            elif st.session_state.parser_status == 'error':
-                st.error(f"Error parsing resume: {st.session_state.get('parser_error', 'Unknown error')}")
 
         # Manual input fields
         first_name = st.text_input(
@@ -145,15 +78,38 @@ def render_personal_info():
             key="prof_level"
         )
 
-        # Save button for manual edits
+        # File upload section
+        st.markdown("### Resume Upload")
+        st.info("✨ Upload your resume (PDF or DOCX format)")
+        uploaded_file = st.file_uploader(
+            "Upload your resume (DOCX or PDF)",
+            type=['docx', 'pdf'],
+            key="resume_uploader",
+            help="Upload your resume"
+        )
+
+        if uploaded_file is not None:
+            st.info(f"File selected: {uploaded_file.name}")
+            file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # Convert to MB
+            if file_size > 10:  # 10MB limit
+                st.warning(f"File size ({file_size:.1f}MB) exceeds 10MB limit")
+            else:
+                st.success(f"File size: {file_size:.1f}MB (Ready for processing)")
+
+        # Save button for form submission
         if st.form_submit_button("Submit"):
+            if not all([first_name, last_name, email, prof_level]):
+                st.error("Please fill in all required fields")
+                return
+
+            if not uploaded_file:
+                st.error("Please upload your resume")
+                return
+
             form_data = {
-                'first_name': name.split()[0] if name else '',
-                'last_name': ' '.join(name.split()[1:]) if name and len(name.split()) > 1 else '',
+                'first_name': first_name,
+                'last_name': last_name,
                 'email': email,
-                'phone': phone,
-                'city': city,
-                'state': state,
                 'professional_level': prof_level,
                 'date_created': current_time
             }
@@ -164,23 +120,22 @@ def render_personal_info():
 
             if send_to_webhook(form_data, file_content):
                 st.success("✅ Information submitted successfully!")
+                st.balloons()
             else:
                 st.error("Failed to submit information. Please try again.")
 
 def render_education():
-    """Display education section with parsed data."""
-    st.info("Education details will be populated from parsed resume data.")
-    if 'parsed_data' in st.session_state and 'education' in st.session_state.parsed_data:
-        st.write(st.session_state.parsed_data['education'])
+    """Display education section."""
+    st.info("Education section")
 
 def render_experience():
-    """Display experience section with parsed data."""
-    st.info("Experience details will be populated from parsed resume data.")
-    if 'parsed_data' in st.session_state and 'experience' in st.session_state.parsed_data:
-        st.write(st.session_state.parsed_data['experience'])
+    """Display experience section."""
+    st.info("Experience section")
 
 def render_skills():
-    """Display skills section with parsed data."""
-    st.info("Skills will be populated from parsed resume data.")
-    if 'parsed_data' in st.session_state and 'skills' in st.session_state.parsed_data:
-        st.write(st.session_state.parsed_data['skills'])
+    """Display skills section."""
+    st.info("Skills section")
+
+def check_parser_status():
+    """Placeholder for parser status check"""
+    pass #No functionality needed here as per new design

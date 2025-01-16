@@ -28,22 +28,23 @@ except ImportError as e:
     sys.exit(1)
 
 def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
-    """Send form data to Make.com webhook."""
+    """Send form data to Zapier webhook."""
     try:
         # Get webhook URL from secrets
-        webhook_url = "https://hook.us2.make.com/rwax3krv6kqd8pcf6t59ngpdaltu88kz"  # Updated webhook URL
+        webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2k4qlhg/"
         if not webhook_url:
-            logger.error("Make.com webhook URL not configured")
+            logger.error("Zapier webhook URL not configured")
             return False
 
         logger.debug(f"Preparing to send data to webhook")
 
-        # Prepare the payload 
+        # Prepare the payload according to specified structure
         payload = {
             "first_name": form_data.get("first_name", ""),
             "last_name": form_data.get("last_name", ""),
             "email": form_data.get("email", ""),
-            "professional_level": form_data.get("professional_level", "")
+            "level": form_data.get("professional_level", ""),
+            "resume": "" #Added to match required structure.  Content will be added via files.
         }
 
         files = None
@@ -51,16 +52,14 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             files = {
                 'resume': (file_data[0], file_data[1], file_data[2])
             }
-            # Add file-related fields
-            payload["_filename_"] = file_data[0]
-            payload["_name_"] = os.path.splitext(file_data[0])[0]
-            payload["_download_url_"] = ""  # Will be populated by Make.com
 
-        logger.debug("Sending request to webhook")
+        logger.debug(f"Sending data to webhook: {json.dumps(payload)}")
+        logger.debug(f"File included: {True if files else False}")
+
         # Send request to webhook
         response = requests.post(
             webhook_url,
-            json=payload,  # Send as JSON directly
+            json=payload,
             files=files,
             timeout=30
         )
@@ -69,7 +68,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         logger.debug(f"Webhook response content: {response.text}")
 
         if response.status_code == 200:
-            logger.info("Successfully sent data to Make.com webhook")
+            logger.info("Successfully sent data to Zapier webhook")
             return True
         else:
             logger.error(f"Failed to send data to webhook. Status code: {response.status_code}")
@@ -148,7 +147,7 @@ def main():
                 }
 
                 logger.info(f"Form submitted successfully: {form_data}")
-                
+
                 if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
                     st.success("Application submitted successfully!")
                     st.balloons()
