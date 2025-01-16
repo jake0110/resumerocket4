@@ -10,67 +10,13 @@ import json
 logger = logging.getLogger(__name__)
 
 def send_to_webhook(form_data, file_content=None):
-    """Send form data to webhook with improved logging and validation.
-
-    Args:
-        form_data (dict): A dictionary containing form fields
-        file_content (bytes, optional): Binary content of uploaded resume file
-
-    Returns:
-        bool: True if webhook submission was successful, False otherwise
     """
-    try:
-        webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2k4qlhg/"
-        if not webhook_url:
-            logger.error("Webhook URL not configured") 
-            return False
-
-        # Prepare payload according to the specified structure 
-        payload = {
-            "first_name": form_data.get("first_name", ""),
-            "last_name": form_data.get("last_name", ""),
-            "email": form_data.get("email", ""),
-            "level": form_data.get("professional_level", "")
-        }
-
-        # Log field validation results with values for debugging
-        for key, value in payload.items():
-            if value:
-                logger.info(f"✅ {key}: {value}")
-            else:
-                logger.warning(f"❌ {key}: Missing or empty")
-
-        files = {}
-        if file_content:
-            files = {'resume': ('resume.pdf', file_content, 'application/pdf')}
-            logger.info(f"✅ Resume file included ({len(file_content)} bytes)")
-        else:
-            logger.warning("❌ No resume file attached")
-
-        logger.debug(f"Sending data to webhook: {json.dumps(payload, indent=2)}")
-        logger.debug(f"File included: {True if files else False}")
-
-        response = requests.post(
-            webhook_url,
-            json=payload, 
-            files=files,
-            timeout=30
-        )
-
-        logger.debug(f"Webhook response status code: {response.status_code}")
-        logger.debug(f"Webhook response content: {response.text}")
-
-        if response.status_code == 200:
-            logger.info("Successfully sent data to webhook")
-            return True
-        else:
-            logger.error(f"Failed to send data to webhook. Status code: {response.status_code}")
-            logger.error(f"Response content: {response.text}")
-            return False
-
-    except Exception as e:
-        logger.error(f"Error sending to webhook: {str(e)}")
-        return False
+    This function is deprecated. Use the implementation in main.py instead.
+    This wrapper is kept temporarily for backward compatibility.
+    """
+    logger.warning("Using deprecated webhook function in forms.py. Please update to use main.py implementation.")
+    from main import send_to_webhook as main_webhook
+    return main_webhook(form_data, file_content)
 
 def render_personal_info():
     """Render the personal information form with file upload."""
