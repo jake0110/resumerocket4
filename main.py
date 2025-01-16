@@ -47,7 +47,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             "resume": ""  # File content will be added separately
         }
 
-        # Log field validation results
+        # Log field validation results with actual values
         for key, value in payload.items():
             if value:
                 logger.info(f"✅ {key}: {value}")
@@ -59,14 +59,14 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             files = {
                 'resume': (file_data[0], file_data[1], file_data[2])
             }
-            logger.info(f"✅ Resume file included: {file_data[0]}")
+            logger.info(f"✅ Resume file included: {file_data[0]} ({len(file_data[1])} bytes)")
         else:
             logger.warning("❌ No resume file attached")
 
-        logger.debug(f"Sending data to webhook: {json.dumps(payload)}")
+        logger.debug(f"Sending data to webhook: {json.dumps(payload, indent=2)}")
         logger.debug(f"File included: {True if files else False}")
 
-        # Send request to webhook
+        # Send request to webhook with improved timeout
         response = requests.post(
             webhook_url,
             json=payload,
