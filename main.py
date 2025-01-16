@@ -11,7 +11,8 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(sys.stdout)
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('app.log')
     ]
 )
 logger = logging.getLogger(__name__)
@@ -32,19 +33,12 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     try:
         # Get webhook URL from secrets or use default
         webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2k4qlhg/"
-        logger.info("Using webhook URL: " + webhook_url)
+        logger.info(f"[{datetime.now().isoformat()}] Initiating webhook submission...")
 
         # Validate webhook URL
         if not webhook_url:
-            logger.error("Webhook URL not configured")
+            logger.error(f"[{datetime.now().isoformat()}] Webhook URL not configured")
             return False
-
-        logger.debug("Preparing to send data to webhook")
-        logger.info("Form Data Validation Results:")
-
-        # Detailed logging of form fields
-        logger.info("Raw form data received:")
-        logger.info(json.dumps(form_data, indent=2))
 
         # Prepare the payload with validation
         payload = {
@@ -55,27 +49,26 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             "timestamp": datetime.now().isoformat()
         }
 
-        # Log field validation results
-        for key, value in payload.items():
-            if value:
-                logger.info(f"✅ {key}: {value}")
-            else:
-                logger.warning(f"❌ {key}: Missing or empty")
+        # Format submission details for logging
+        submission_details = (
+            f"[{payload['first_name']}, {payload['last_name']}, "
+            f"{payload['email']}, {payload['level']}"
+        )
 
         # Handle file data
         files = None
         if file_data:
             file_name, file_content, file_type = file_data
-            logger.info(f"✅ Resume file: {file_name} ({len(file_content)} bytes, type: {file_type})")
+            submission_details += f", Resume: {file_name}]"
             files = {
                 'resume': (file_name, file_content, file_type)
             }
+            logger.info(f"[{datetime.now().isoformat()}] Resume file included: {file_name} ({len(file_content)} bytes)")
         else:
-            logger.warning("❌ No resume file attached")
+            submission_details += ", No Resume]"
+            logger.warning(f"[{datetime.now().isoformat()}] No resume file attached")
 
-        # Log the final payload
-        logger.debug(f"Final payload to webhook: {json.dumps(payload, indent=2)}")
-        logger.debug(f"File included: {True if files else False}")
+        logger.info(f"[{datetime.now().isoformat()}] Preparing webhook submission: {submission_details}")
 
         # Send request to webhook
         response = requests.post(
@@ -85,20 +78,17 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             timeout=30
         )
 
-        # Log response details
-        logger.debug(f"Webhook response status code: {response.status_code}")
-        logger.debug(f"Webhook response content: {response.text}")
-
         if response.status_code == 200:
-            logger.info("Successfully sent data to webhook")
+            logger.info(f"[{datetime.now().isoformat()}] Webhook successfully triggered for submission: {submission_details}")
             return True
         else:
-            logger.error(f"Failed to send data to webhook. Status code: {response.status_code}")
-            logger.error(f"Response content: {response.text}")
+            error_msg = f"Status: {response.status_code}, Response: {response.text}"
+            logger.error(f"[{datetime.now().isoformat()}] Webhook failed for submission: {submission_details}. Error: {error_msg}")
             return False
 
     except Exception as e:
-        logger.error(f"Error sending data to webhook: {str(e)}")
+        logger.error(f"[{datetime.now().isoformat()}] Error sending data to webhook: {str(e)}")
+        logger.error(f"[{datetime.now().isoformat()}] Failed submission details: {submission_details}")
         return False
 
 def main():
