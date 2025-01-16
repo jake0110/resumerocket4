@@ -33,7 +33,7 @@ def send_to_webhook(form_data, file_content=None):
             "level": form_data.get("professional_level", "")
         }
 
-        # Log field validation results
+        # Log field validation results with values for debugging
         for key, value in payload.items():
             if value:
                 logger.info(f"✅ {key}: {value}")
@@ -43,11 +43,11 @@ def send_to_webhook(form_data, file_content=None):
         files = {}
         if file_content:
             files = {'resume': ('resume.pdf', file_content, 'application/pdf')}
-            logger.info("✅ Resume file included")
+            logger.info(f"✅ Resume file included ({len(file_content)} bytes)")
         else:
             logger.warning("❌ No resume file attached")
 
-        logger.debug(f"Sending data to webhook: {json.dumps(payload)}")
+        logger.debug(f"Sending data to webhook: {json.dumps(payload, indent=2)}")
         logger.debug(f"File included: {True if files else False}")
 
         response = requests.post(
