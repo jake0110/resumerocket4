@@ -40,13 +40,12 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             logger.error(f"[{datetime.now().isoformat()}] Webhook URL not configured")
             return False
 
-        # Prepare the payload with validation
+        # Prepare the payload with exactly the required fields
         payload = {
             "first_name": form_data.get("first_name", "").strip(),
             "last_name": form_data.get("last_name", "").strip(),
             "email": form_data.get("email", "").strip(),
-            "level": form_data.get("professional_level", "").strip(),
-            "timestamp": datetime.now().isoformat()
+            "level": form_data.get("professional_level", "").strip()
         }
 
         # Debug logging of webhook details
@@ -64,6 +63,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         if file_data:
             file_name, file_content, file_type = file_data
             submission_details += f", Resume: {file_name}]"
+            # Ensure file is sent with correct field name 'resume'
             files = {
                 'resume': (file_name, file_content, file_type)
             }
