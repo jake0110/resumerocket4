@@ -32,7 +32,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     """Send form data to webhook with improved logging and validation."""
     try:
         # Get webhook URL from secrets or use default
-        webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2k4qlhg/"
+        webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2km31m2/"
         logger.info(f"[{datetime.now().isoformat()}] Initiating webhook submission...")
 
         # Validate webhook URL
