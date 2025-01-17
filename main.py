@@ -85,10 +85,14 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         # Send request to webhook
         response = requests.post(
             webhook_url,
-            json=payload,
+            data=payload,  # Changed from json to data parameter
             files=files,
             timeout=30
         )
+
+        # Log the response for debugging
+        logger.debug(f"Webhook Response Status: {response.status_code}")
+        logger.debug(f"Webhook Response Content: {response.text}")
 
         if response.status_code == 200:
             logger.info(f"[{datetime.now().isoformat()}] Webhook successfully triggered for submission: {submission_details}")
