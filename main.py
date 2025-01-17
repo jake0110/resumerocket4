@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Configure logging first
 logging.basicConfig(
@@ -33,19 +33,23 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     try:
         # Get webhook URL from secrets or use default
         webhook_url = "https://hooks.zapier.com/hooks/catch/274092/2km31m2/"
-        logger.info(f"[{datetime.now().isoformat()}] Initiating webhook submission...")
+        logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Initiating webhook submission...")
 
         # Validate webhook URL
         if not webhook_url:
-            logger.error(f"[{datetime.now().isoformat()}] Webhook URL not configured")
+            logger.error(f"[{datetime.now(timezone.utc).isoformat()}] Webhook URL not configured")
             return False
+
+        # Add timestamp in ISO format with UTC timezone
+        form_data['timestamp'] = datetime.now(timezone.utc).isoformat()
 
         # Prepare the payload with exactly the required fields
         payload = {
             "first_name": form_data.get("first_name", "").strip(),
             "last_name": form_data.get("last_name", "").strip(),
             "email": form_data.get("email", "").strip(),
-            "level": form_data.get("professional_level", "").strip()
+            "level": form_data.get("professional_level", "").strip(),
+            "timestamp": form_data["timestamp"]
         }
 
         # Debug logging of webhook details
@@ -55,7 +59,8 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         # Format submission details for logging
         submission_details = (
             f"[{payload['first_name']}, {payload['last_name']}, "
-            f"{payload['email']}, {payload['level']}"
+            f"{payload['email']}, {payload['level']}, "
+            f"Timestamp: {payload['timestamp']}"
         )
 
         # Handle file data
@@ -63,17 +68,16 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         if file_data:
             file_name, file_content, file_type = file_data
             submission_details += f", Resume: {file_name}]"
-            # Ensure file is sent with correct field name 'resume'
             files = {
                 'resume': (file_name, file_content, file_type)
             }
             logger.debug(f"File details - Name: {file_name}, Type: {file_type}, Size: {len(file_content)} bytes")
-            logger.info(f"[{datetime.now().isoformat()}] Resume file included: {file_name} ({len(file_content)} bytes)")
+            logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Resume file included: {file_name} ({len(file_content)} bytes)")
         else:
             submission_details += ", No Resume]"
-            logger.warning(f"[{datetime.now().isoformat()}] No resume file attached")
+            logger.warning(f"[{datetime.now(timezone.utc).isoformat()}] No resume file attached")
 
-        logger.info(f"[{datetime.now().isoformat()}] Preparing webhook submission: {submission_details}")
+        logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Preparing webhook submission: {submission_details}")
 
         # Additional debug logging right before the POST request
         logger.debug("==== WEBHOOK REQUEST DETAILS ====")
@@ -85,7 +89,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         # Send request to webhook
         response = requests.post(
             webhook_url,
-            data=payload,  # Changed from json to data parameter
+            data=payload,
             files=files,
             timeout=30
         )
@@ -95,18 +99,18 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         logger.debug(f"Webhook Response Content: {response.text}")
 
         if response.status_code == 200:
-            logger.info(f"[{datetime.now().isoformat()}] Webhook successfully triggered for submission: {submission_details}")
+            logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Webhook successfully triggered for submission: {submission_details}")
             return True
         else:
             error_msg = f"Status: {response.status_code}, Response: {response.text}"
-            logger.error(f"[{datetime.now().isoformat()}] Webhook failed for submission: {submission_details}. Error: {error_msg}")
+            logger.error(f"[{datetime.now(timezone.utc).isoformat()}] Webhook failed for submission: {submission_details}. Error: {error_msg}")
             return False
 
     except Exception as e:
         error_msg = str(e)
-        logger.error(f"[{datetime.now().isoformat()}] Error sending data to webhook: {error_msg}")
+        logger.error(f"[{datetime.now(timezone.utc).isoformat()}] Error sending data to webhook: {error_msg}")
         if 'submission_details' in locals():
-            logger.error(f"[{datetime.now().isoformat()}] Failed submission details: {submission_details}")
+            logger.error(f"[{datetime.now(timezone.utc).isoformat()}] Failed submission details: {submission_details}")
         return False
 
 def main():
@@ -167,7 +171,6 @@ def main():
                     'last_name': last_name,
                     'email': email,
                     'professional_level': level,
-                    'date_created': datetime.now().isoformat()
                 }
 
                 logger.info(f"Form submitted with data: {json.dumps(form_data, indent=2)}")

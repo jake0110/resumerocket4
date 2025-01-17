@@ -3,7 +3,7 @@ import os
 import tempfile
 import logging
 import time
-import datetime
+from datetime import datetime, timezone
 import requests
 import json
 
@@ -23,8 +23,8 @@ def render_personal_info():
     with st.form("personal_info_form"):
         st.subheader("Personal Information")
 
-        # Add timestamp
-        current_time = datetime.datetime.now().isoformat()
+        # Add timestamp in ISO format with UTC timezone
+        current_time = datetime.now(timezone.utc).isoformat()
 
         # Manual input fields
         first_name = st.text_input(
@@ -90,7 +90,7 @@ def render_personal_info():
                 'last_name': last_name,
                 'email': email,
                 'professional_level': prof_level,
-                'date_created': current_time
+                'timestamp': current_time  # Using the standardized timestamp field
             }
 
             file_content = None
