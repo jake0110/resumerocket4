@@ -42,21 +42,6 @@ def render_personal_info():
             key="email_input"
         )
 
-        # Professional level dropdown
-        level_options = [
-            'Individual Contributor', 
-            'Manager', 
-            'Client Manager', 
-            'Selling Principal/Partner', 
-            'Practice Leader'
-        ]
-        prof_level = st.selectbox(
-            "Professional Level",
-            options=level_options,
-            index=0,
-            key="prof_level"
-        )
-
         # File upload section
         st.markdown("### Resume Upload")
         st.info("✨ Upload your resume (PDF or DOCX format)")
@@ -77,7 +62,7 @@ def render_personal_info():
 
         # Save button for form submission
         if st.form_submit_button("Submit"):
-            if not all([first_name, last_name, email, prof_level]):
+            if not all([first_name, last_name, email]):
                 st.error("Please fill in all required fields")
                 return
 
@@ -89,8 +74,8 @@ def render_personal_info():
                 'first_name': first_name,
                 'last_name': last_name,
                 'email': email,
-                'professional_level': prof_level,
-                'timestamp': current_time  # Using the standardized timestamp field
+                'professional_level': 'Individual Contributor',  # Set default value
+                'timestamp': current_time
             }
 
             file_content = None

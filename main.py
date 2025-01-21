@@ -134,15 +134,6 @@ def main():
 
             with col2:
                 email = st.text_input("Email", key="email")
-                level_options = [
-                    "Select Level",
-                    "Individual Contributor",
-                    "Manager",
-                    "Client Manager",
-                    "Selling Principal/Partner",
-                    "Practice Leader"
-                ]
-                level = st.selectbox("Professional Level", level_options, key="level")
 
             # File Upload Section
             uploaded_file = st.file_uploader(
@@ -157,7 +148,7 @@ def main():
 
             if submit_button:
                 # Validate form
-                if not all([first_name, last_name, email, level != "Select Level"]):
+                if not all([first_name, last_name, email]):
                     st.error("Please fill in all required fields")
                     return
 
@@ -170,7 +161,7 @@ def main():
                     'first_name': first_name,
                     'last_name': last_name,
                     'email': email,
-                    'professional_level': level,
+                    'professional_level': "Individual Contributor",  # Set default value
                 }
 
                 logger.info(f"Form submitted with data: {json.dumps(form_data, indent=2)}")
