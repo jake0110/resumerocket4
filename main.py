@@ -5,6 +5,7 @@ from typing import Optional
 import json
 import requests
 from datetime import datetime, timezone
+import streamlit as st
 
 # Configure logging first
 logging.basicConfig(
@@ -18,15 +19,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 logger.debug("Starting application...")
-
-# Import required packages with error handling
-try:
-    logger.debug("Importing required packages...")
-    import streamlit as st
-    logger.debug("Successfully imported all required packages")
-except ImportError as e:
-    logger.error(f"Failed to import required packages: {str(e)}")
-    sys.exit(1)
 
 def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     """Send form data to webhook with improved logging and validation."""
@@ -114,56 +106,122 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         return False
 
 def main():
-    """Main application entry point."""
-    try:
-        # Configure page
-        st.set_page_config(
-            page_title="ResumeRocket5 - Resume Analyzer",
-            layout="wide"
+    """Main application entry point with clean prototype layout."""
+    st.set_page_config(
+        page_title="ResumeRocket5a Prototype",
+        layout="centered",
+        initial_sidebar_state="collapsed"
+    )
+
+    # Custom styling
+    st.markdown("""
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+            .main {
+                padding: 2rem;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            h1, h2, h3 {
+                font-family: 'Inter', sans-serif;
+                color: #1E3A8A;
+            }
+
+            .limited-offer {
+                background-color: #FEF3C7;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                border: 1px solid #F59E0B;
+                margin: 1rem 0;
+                text-align: center;
+            }
+
+            .section-card {
+                background-color: #F8FAFC;
+                padding: 1.5rem;
+                border-radius: 0.5rem;
+                margin: 1rem 0;
+            }
+
+            .footer {
+                margin-top: 2rem;
+                padding-top: 1rem;
+                border-top: 1px solid #E2E8F0;
+                text-align: center;
+                color: #64748B;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Header with Project Introduction
+    st.title("ResumeRocket5a Prototype")
+    st.markdown("Transform your job search with AI-powered resume optimization")
+
+    # Limited Offer Banner
+    st.markdown("""
+        <div class='limited-offer'>
+            <strong>🚀 Limited Beta Access</strong><br>
+            We're accepting only 50 users for our free beta program in exchange for detailed feedback.
+            Join now to be part of this exclusive group!
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Project Background
+    st.markdown("""
+        <div class='section-card'>
+            <h2>About Our Project</h2>
+            <p>ResumeRocket5a is developed by industry professionals with over a decade of experience in 
+            recruitment and HR technology. Our AI-powered platform analyzes and optimizes resumes based on 
+            current industry standards and job market requirements.</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Eligibility and Requirements
+    st.markdown("""
+        <div class='section-card'>
+            <h2>Eligibility Requirements</h2>
+            <ul>
+                <li>Currently seeking employment or career advancement</li>
+                <li>Have a resume in PDF or DOCX format</li>
+                <li>Willing to provide detailed feedback on our service</li>
+                <li>Must be 18 years or older</li>
+            </ul>
+            <p><em>Note: This is a prototype version for testing and feedback purposes only.</em></p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Application Form
+    st.markdown("<h2>Submit Your Application</h2>", unsafe_allow_html=True)
+    with st.form("resume_form"):
+        col1, col2 = st.columns(2)
+
+        with col1:
+            first_name = st.text_input("First Name*")
+        with col2:
+            last_name = st.text_input("Last Name*")
+
+        email = st.text_input("Email Address*")
+
+        uploaded_file = st.file_uploader(
+            "Upload Your Resume*",
+            type=['pdf', 'docx'],
+            help="Accepted formats: PDF, DOCX • Max size: 10MB"
         )
 
-        st.title("ResumeRocket5 - Resume Analyzer")
-        st.write("Please fill out the form below")
+        submit = st.form_submit_button("Submit Application")
 
-        with st.form("resume_form"):
-            col1, col2 = st.columns(2)
-
-            with col1:
-                first_name = st.text_input("First Name", key="first_name")
-                last_name = st.text_input("Last Name", key="last_name")
-
-            with col2:
-                email = st.text_input("Email", key="email")
-
-            # File Upload Section
-            uploaded_file = st.file_uploader(
-                "Upload your resume",
-                type=['docx', 'pdf'],
-                help="Upload a Word document (.docx) or PDF file",
-                key="resume"
-            )
-
-            # Submit button
-            submit_button = st.form_submit_button("Submit Application")
-
-            if submit_button:
-                # Validate form
-                if not all([first_name, last_name, email]):
-                    st.error("Please fill in all required fields")
-                    return
-
-                if not uploaded_file:
-                    st.error("Please upload your resume")
-                    return
-
-                # Process form data
+        if submit:
+            if not all([first_name, last_name, email, uploaded_file]):
+                st.error("Please fill in all required fields and upload your resume.")
+            else:
                 form_data = {
                     'first_name': first_name,
                     'last_name': last_name,
                     'email': email,
                     'professional_level': "Individual Contributor",  # Set default value
                 }
-
                 logger.info(f"Form submitted with data: {json.dumps(form_data, indent=2)}")
 
                 if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
@@ -172,14 +230,14 @@ def main():
                 else:
                     st.error("Failed to submit application. Please try again.")
 
-    except Exception as e:
-        logger.error(f"Application error: {str(e)}")
-        st.error("An unexpected error occurred. Please try again.")
+
+    # Footer
+    st.markdown("""
+        <div class='footer'>
+            <p>© 2025 ResumeRocket5a Prototype | Contact: support@resumerocket5a.example.com</p>
+            <p><small>This is a prototype version for testing and feedback purposes only.</small></p>
+        </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
-    try:
-        logger.debug("Starting main application...")
-        main()
-    except Exception as e:
-        logger.error(f"Application failed to start: {str(e)}")
-        st.error("Application failed to start. Please try again.")
+    main()
