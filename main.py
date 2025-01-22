@@ -1,3 +1,4 @@
+import streamlit as st
 import os
 import sys
 import logging
@@ -6,7 +7,7 @@ import json
 import requests
 from datetime import datetime, timezone
 
-# Configure logging first
+# Configure logging
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -17,16 +18,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-logger.debug("Starting application...")
-
-try:
-    logger.debug("Importing required packages...")
-    import streamlit as st
-    logger.debug("Successfully imported all required packages")
-except ImportError as e:
-    logger.error(f"Failed to import required packages: {str(e)}")
-    sys.exit(1)
-
 def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     """Send form data to webhook with improved logging and validation."""
     try:
@@ -34,7 +25,7 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Initiating webhook submission...")
 
         if not webhook_url:
-            logger.error(f"[{datetime.now(timezone.utc).isoformat()}] Webhook URL not configured")
+            logger.error("Webhook URL not configured")
             return False
 
         form_data['timestamp'] = datetime.now(timezone.utc).isoformat()
@@ -46,28 +37,13 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             "timestamp": form_data["timestamp"]
         }
 
-        logger.debug(f"Webhook URL: {webhook_url}")
-        logger.debug(f"Payload being sent: {json.dumps(payload, indent=2)}")
-
-        submission_details = (
-            f"[{payload['first_name']}, {payload['last_name']}, "
-            f"{payload['email']}, Timestamp: {payload['timestamp']}"
-        )
-
         files = None
         if file_data:
             file_name, file_content, file_type = file_data
-            submission_details += f", Resume: {file_name}]"
             files = {
                 'resume': (file_name, file_content, file_type)
             }
             logger.debug(f"File details - Name: {file_name}, Type: {file_type}, Size: {len(file_content)} bytes")
-            logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Resume file included: {file_name} ({len(file_content)} bytes)")
-        else:
-            submission_details += ", No Resume]"
-            logger.warning(f"[{datetime.now(timezone.utc).isoformat()}] No resume file attached")
-
-        logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Preparing webhook submission: {submission_details}")
 
         response = requests.post(
             webhook_url,
@@ -76,26 +52,19 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             timeout=30
         )
 
-        logger.debug(f"Webhook Response Status: {response.status_code}")
-        logger.debug(f"Webhook Response Content: {response.text}")
-
         if response.status_code == 200:
-            logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Webhook successfully triggered for submission: {submission_details}")
+            logger.info("Webhook submission successful")
             return True
         else:
-            error_msg = f"Status: {response.status_code}, Response: {response.text}"
-            logger.error(f"[{datetime.now(timezone.utc).isoformat()}] Webhook failed for submission: {submission_details}. Error: {error_msg}")
+            logger.error(f"Webhook failed. Status: {response.status_code}, Response: {response.text}")
             return False
 
     except Exception as e:
-        error_msg = str(e)
-        logger.error(f"[{datetime.now(timezone.utc).isoformat()}] Error sending data to webhook: {error_msg}")
-        if 'submission_details' in locals():
-            logger.error(f"[{datetime.now(timezone.utc).isoformat()}] Failed submission details: {submission_details}")
+        logger.error(f"Error sending data to webhook: {str(e)}")
         return False
 
 def main():
-    """Main application entry point with updated layout."""
+    """Main application entry point"""
     try:
         # Configure page
         st.set_page_config(
@@ -104,149 +73,127 @@ def main():
             initial_sidebar_state="collapsed"
         )
 
-        # Custom CSS for clean, professional look
+        # Custom CSS
         st.markdown("""
             <style>
             .main {
-                padding: 0.8rem;
+                padding: 2rem;
+                max-width: 1200px;
+                margin: 0 auto;
             }
-            .content-section {
-                margin-bottom: 0.8rem;
-                padding: 1rem;
+            .stApp {
+                background-color: #f8f9fa;
+            }
+            .content-box {
                 background-color: white;
-                border-radius: 5px;
+                padding: 1.5rem;
+                border-radius: 8px;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                margin-bottom: 1.5rem;
             }
-            .info-text {
-                font-size: 0.9rem;
-                line-height: 1.4;
-                color: #333;
-                margin-bottom: 0.8rem;
-            }
-            .requirements-list {
-                margin: 0;
-                padding-left: 1.2rem;
-                list-style-type: disc;
-            }
-            .requirements-list li {
-                margin-bottom: 0.4rem;
-                line-height: 1.3;
-                color: #333;
-            }
-            h4 {
-                margin-bottom: 0.6rem;
+            .section-title {
+                font-size: 1.2rem;
+                font-weight: 600;
+                margin-bottom: 1rem;
                 color: #1E1E1E;
-                font-size: 1.1rem;
             }
-            div[data-testid="stForm"] {
-                background-color: white;
-                padding: 1rem;
-                border-radius: 5px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            }
-            div.stButton > button {
-                width: 100%;
-                margin-top: 0.8rem;
+            .section-text {
+                font-size: 1rem;
+                line-height: 1.6;
+                color: #4A4A4A;
+                margin-bottom: 1.5rem;
             }
             .footer {
-                margin-top: 1.5rem;
-                padding: 0.8rem;
-                background-color: #f7f7f7;
-                border-radius: 5px;
                 text-align: center;
-                font-size: 0.85rem;
-            }
-            .stMarkdown {
-                margin-bottom: 0.4rem;
+                padding: 1.5rem;
+                margin-top: 2rem;
+                font-size: 0.9rem;
+                color: #666;
+                background-color: #f8f9fa;
+                border-radius: 8px;
             }
             </style>
         """, unsafe_allow_html=True)
 
-        # Header Section
+        # Header
         st.title("ResumeRocket5 Prototype")
         st.markdown("A specialized AI-powered resume analysis tool for management consultants, designed to enhance interview opportunities and enrich conversations with hiring managers.")
 
         # Create two columns for main content
-        col1, col2 = st.columns([6, 4])
+        left_col, right_col = st.columns([6, 4])
 
-        # Left Column - Application Form
-        with col1:
-            st.markdown("<div class='content-section'>", unsafe_allow_html=True)
-            st.subheader("Enter Your Information")
-
-            with st.form("beta_access_form"):
-                first_name = st.text_input("First Name")
-                last_name = st.text_input("Last Name")
-                email = st.text_input("Email Address")
-
-                uploaded_file = st.file_uploader(
-                    "Upload Resume",
-                    type=['pdf', 'docx'],
-                    help="Limit 20MB per file • PDF, DOCX"
+        # Left Column - Content
+        with left_col:
+            with st.container():
+                # About Our Project
+                st.markdown("### About Our Project")
+                st.write(
+                    "This project emerged from research conducted in artificial intelligence, its application to human "
+                    "resources and recruiting, combined with expertise gained from decades of recruiting in the management "
+                    "consulting field. The prototype brings together deep industry knowledge with AI-based language analysis "
+                    "to produce an analysis engine that sits at the leading edge of what AI can offer management consulting "
+                    "job seekers.\n\n"
+                    "This limited prototype release (50 users) will help us evaluate the tool's viability. While there's no "
+                    "monetary cost, we ask for your detailed feedback in exchange for the analysis - a mutual exchange of "
+                    "value that will shape the project's future direction."
                 )
 
-                agree = st.checkbox("I commit to providing detailed feedback after using the tool")
-                submit_button = st.form_submit_button("Upload Document")
+                # Eligibility Requirements
+                st.markdown("### Eligibility Requirements")
+                st.markdown("""
+                    - Must be a current management consultant or have worked as one within the past two years
+                    - Must be actively or passively seeking new employment opportunities
+                    - Must commit to providing detailed feedback and suggestions after using the tool
+                """)
 
-                if submit_button:
-                    if not all([first_name, last_name, email]):
-                        st.error("Please fill in all required fields")
-                        return
+        # Right Column - Form
+        with right_col:
+            with st.container():
+                st.markdown("### Enter Your Information")
 
-                    if not uploaded_file:
-                        st.error("Please upload your resume")
-                        return
+                with st.form("beta_access_form", clear_on_submit=False):
+                    first_name = st.text_input("First Name")
+                    last_name = st.text_input("Last Name")
+                    email = st.text_input("Email Address")
 
-                    if not agree:
-                        st.error("Please agree to provide feedback to join the beta program")
-                        return
+                    uploaded_file = st.file_uploader(
+                        "Upload Resume",
+                        type=['pdf', 'docx'],
+                        help="Limit 20MB per file • PDF, DOCX"
+                    )
 
-                    form_data = {
-                        'first_name': first_name,
-                        'last_name': last_name,
-                        'email': email,
-                    }
+                    agree = st.checkbox("I commit to providing detailed feedback after using the tool")
+                    submit_button = st.form_submit_button("Upload Document")
 
-                    if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
-                        st.success("Your application has been submitted successfully! We'll be in touch soon.")
-                        st.balloons()
-                    else:
-                        st.error("There was an error submitting your application. Please try again.")
+                    if submit_button:
+                        if not all([first_name, last_name, email]):
+                            st.error("Please fill in all required fields")
+                            return
 
-            st.markdown("</div>", unsafe_allow_html=True)
+                        if not uploaded_file:
+                            st.error("Please upload your resume")
+                            return
 
-        # Right Column - Project Information
-        with col2:
-            st.markdown("""
-                <div class='content-section'>
-                    <h4>Limited Prototype Release</h4>
-                    <p class='info-text'>
-                        This limited prototype release (50 users) will help us evaluate the tool's viability. 
-                        While there's no monetary cost, we ask for your detailed feedback in exchange for the analysis - 
-                        a mutual exchange of value that will shape the project's future direction.
-                    </p>
+                        if not agree:
+                            st.error("Please agree to provide feedback to join the beta program")
+                            return
 
-                    <h4>About Our Project</h4>
-                    <p class='info-text'>
-                        This prototype emerged from extensive research into AI applications in consulting recruitment. 
-                        As a 30-year executive recruiter specialized in management consulting, I've reviewed thousands 
-                        of resumes across major firms and levels. We've combined this industry expertise with targeted 
-                        AI capabilities to create a specialized analysis engine for management consultants' career documents.
-                    </p>
+                        form_data = {
+                            'first_name': first_name,
+                            'last_name': last_name,
+                            'email': email,
+                        }
 
-                    <h4>Eligibility Requirements</h4>
-                    <ul class='requirements-list'>
-                        <li>Must be a current management consultant or have worked as one within the past two years</li>
-                        <li>Must be actively or passively seeking new employment opportunities</li>
-                        <li>Must commit to providing detailed feedback and suggestions after using the tool</li>
-                    </ul>
-                </div>
-            """, unsafe_allow_html=True)
+                        if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
+                            st.success("Your application has been submitted successfully! We'll be in touch soon.")
+                            st.balloons()
+                        else:
+                            st.error("There was an error submitting your application. Please try again.")
 
         # Footer
         st.markdown("""
-            <div class='footer'>
-                <p>© 2025 ResumeRocket5 Prototype | Contact: support@resumerocket5.example.com</p>
+            <div class="footer">
+                © 2025 ResumeRocket5 Prototype | Contact: support@resumerocket5.example.com<br>
                 <small>This is a prototype version for demonstration purposes only. As with all AI-powered tools, 
                 outputs may contain inaccuracies and should be reviewed carefully.</small>
             </div>
