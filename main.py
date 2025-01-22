@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 logger.debug("Starting application...")
 
-# Import required packages with error handling
 try:
     logger.debug("Importing required packages...")
     import streamlit as st
@@ -31,39 +30,30 @@ except ImportError as e:
 def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     """Send form data to webhook with improved logging and validation."""
     try:
-        # Get webhook URL from secrets or use default
         webhook_url = st.secrets["general"].get("MAKE_WEBHOOK_URL", "https://hooks.zapier.com/hooks/catch/274092/2km31m2/")
         logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Initiating webhook submission...")
 
-        # Validate webhook URL
         if not webhook_url:
             logger.error(f"[{datetime.now(timezone.utc).isoformat()}] Webhook URL not configured")
             return False
 
-        # Add timestamp in ISO format with UTC timezone
         form_data['timestamp'] = datetime.now(timezone.utc).isoformat()
 
-        # Prepare the payload with exactly the required fields
         payload = {
             "first_name": form_data.get("first_name", "").strip(),
             "last_name": form_data.get("last_name", "").strip(),
             "email": form_data.get("email", "").strip(),
-            "level": form_data.get("professional_level", "").strip(),
             "timestamp": form_data["timestamp"]
         }
 
-        # Debug logging of webhook details
         logger.debug(f"Webhook URL: {webhook_url}")
         logger.debug(f"Payload being sent: {json.dumps(payload, indent=2)}")
 
-        # Format submission details for logging
         submission_details = (
             f"[{payload['first_name']}, {payload['last_name']}, "
-            f"{payload['email']}, {payload['level']}, "
-            f"Timestamp: {payload['timestamp']}"
+            f"{payload['email']}, Timestamp: {payload['timestamp']}"
         )
 
-        # Handle file data
         files = None
         if file_data:
             file_name, file_content, file_type = file_data
@@ -79,14 +69,6 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
 
         logger.info(f"[{datetime.now(timezone.utc).isoformat()}] Preparing webhook submission: {submission_details}")
 
-        # Additional debug logging right before the POST request
-        logger.debug("==== WEBHOOK REQUEST DETAILS ====")
-        logger.debug(f"URL: {webhook_url}")
-        logger.debug(f"Payload: {json.dumps(payload, indent=2)}")
-        logger.debug(f"Files included: {True if files else False}")
-        logger.debug("==============================")
-
-        # Send request to webhook
         response = requests.post(
             webhook_url,
             data=payload,
@@ -94,7 +76,6 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
             timeout=30
         )
 
-        # Log the response for debugging
         logger.debug(f"Webhook Response Status: {response.status_code}")
         logger.debug(f"Webhook Response Content: {response.text}")
 
@@ -114,63 +95,141 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
         return False
 
 def main():
-    """Main application entry point."""
+    """Main application entry point with updated layout."""
     try:
         # Configure page
         st.set_page_config(
-            page_title="ResumeRocket5 - Resume Analyzer",
-            layout="wide"
+            page_title="ResumeRocket5a - Beta Access",
+            layout="wide",
+            initial_sidebar_state="collapsed"
         )
 
-        st.title("ResumeRocket5 - Resume Analyzer")
-        st.write("Please fill out the form below")
+        # Custom CSS for clean, professional look
+        st.markdown("""
+            <style>
+            .main {
+                padding: 2rem;
+            }
+            .beta-banner {
+                background-color: #f0f2f6;
+                padding: 1rem;
+                border-radius: 5px;
+                margin-bottom: 2rem;
+            }
+            .section {
+                margin-bottom: 2rem;
+                padding: 1.5rem;
+                background-color: white;
+                border-radius: 5px;
+            }
+            .footer {
+                margin-top: 3rem;
+                padding: 1rem;
+                background-color: #f7f7f7;
+                border-radius: 5px;
+                text-align: center;
+            }
+            </style>
+        """, unsafe_allow_html=True)
 
-        with st.form("resume_form"):
-            col1, col2 = st.columns(2)
+        # Header Section
+        st.title("ResumeRocket5a - Prototype")
+        st.markdown("Transform your job search with AI-powered resume optimization")
 
-            with col1:
-                first_name = st.text_input("First Name", key="first_name")
-                last_name = st.text_input("Last Name", key="last_name")
+        # Beta Access Banner
+        st.markdown("""
+            <div class='beta-banner'>
+                <h3>🚀 Exclusive Beta Access</h3>
+                <p>We're accepting only <strong>50 users</strong> for our free beta program. In exchange, we ask for your valuable feedback to help shape the future of ResumeRocket5a.</p>
+            </div>
+        """, unsafe_allow_html=True)
 
-            with col2:
+        # Project Background
+        with st.container():
+            st.markdown("""
+                <div class='section'>
+                    <h3>About ResumeRocket5a</h3>
+                    <p>ResumeRocket5a leverages cutting-edge AI technology to analyze and optimize resumes, 
+                    helping job seekers present their best professional selves. Our platform has been developed 
+                    by industry experts with years of recruitment experience.</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+        # Eligibility Requirements
+        with st.container():
+            st.markdown("""
+                <div class='section'>
+                    <h3>Beta Program Eligibility</h3>
+                    <ul>
+                        <li>Currently seeking job opportunities</li>
+                        <li>Willing to provide detailed feedback on the platform</li>
+                        <li>Have a resume in PDF or DOCX format</li>
+                    </ul>
+                </div>
+            """, unsafe_allow_html=True)
+
+        # Application Form
+        with st.container():
+            st.markdown("<div class='section'>", unsafe_allow_html=True)
+            st.subheader("Apply for Beta Access")
+
+            with st.form("beta_access_form"):
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    first_name = st.text_input("First Name", key="first_name")
+
+                with col2:
+                    last_name = st.text_input("Last Name", key="last_name")
+
                 email = st.text_input("Email", key="email")
 
-            # File Upload Section
-            uploaded_file = st.file_uploader(
-                "Upload your resume",
-                type=['docx', 'pdf'],
-                help="Upload a Word document (.docx) or PDF file",
-                key="resume"
-            )
+                uploaded_file = st.file_uploader(
+                    "Upload your resume (PDF or DOCX)",
+                    type=['pdf', 'docx'],
+                    help="We accept PDF or Word documents up to 10MB",
+                    key="resume"
+                )
 
-            # Submit button
-            submit_button = st.form_submit_button("Submit Application")
+                # Agreement checkbox
+                agree = st.checkbox("I agree to provide feedback on my experience with ResumeRocket5a")
 
-            if submit_button:
-                # Validate form
-                if not all([first_name, last_name, email]):
-                    st.error("Please fill in all required fields")
-                    return
+                submit_button = st.form_submit_button("Submit Application")
 
-                if not uploaded_file:
-                    st.error("Please upload your resume")
-                    return
+                if submit_button:
+                    if not all([first_name, last_name, email]):
+                        st.error("Please fill in all required fields")
+                        return
 
-                # Process form data
-                form_data = {
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'email': email,
-                    'professional_level': "Individual Contributor",  # Set default value
-                }
+                    if not uploaded_file:
+                        st.error("Please upload your resume")
+                        return
 
-                logger.info(f"Form submitted with data: {json.dumps(form_data, indent=2)}")
+                    if not agree:
+                        st.error("Please agree to provide feedback to join the beta program")
+                        return
 
-                if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
-                    st.success("Application submitted successfully!")
-                    st.balloons()
-                else:
-                    st.error("Failed to submit application. Please try again.")
+                    form_data = {
+                        'first_name': first_name,
+                        'last_name': last_name,
+                        'email': email,
+                    }
+
+                    if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
+                        st.success("Your application has been submitted successfully! We'll be in touch soon.")
+                        st.balloons()
+                    else:
+                        st.error("There was an error submitting your application. Please try again.")
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # Footer
+        st.markdown("""
+            <div class='footer'>
+                <p>© 2025 ResumeRocket5a Prototype | Contact: support@resumerocket5a.example.com</p>
+                <small>By submitting your application, you agree to our Terms of Service and Privacy Policy.</small>
+            </div>
+        """, unsafe_allow_html=True)
 
     except Exception as e:
         logger.error(f"Application error: {str(e)}")
