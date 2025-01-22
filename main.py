@@ -133,14 +133,16 @@ def main():
         """, unsafe_allow_html=True)
 
         # Header Section
-        st.title("ResumeRocket5a - Prototype")
-        st.markdown("Transform your job search with AI-powered resume optimization")
+        st.title("ResumeRocket5 Prototype")
+        st.markdown("A specialized AI-powered resume analysis tool for management consultants, designed to enhance interview opportunities and enrich conversations with hiring managers.")
 
         # Beta Access Banner
         st.markdown("""
             <div class='beta-banner'>
-                <h3>🚀 Exclusive Beta Access</h3>
-                <p>We're accepting only <strong>50 users</strong> for our free beta program. In exchange, we ask for your valuable feedback to help shape the future of ResumeRocket5a.</p>
+                <h3>🚀 Limited Prototype Release</h3>
+                <p>This limited prototype release (<strong>50 users</strong>) will help us evaluate the tool's viability. 
+                While there's no monetary cost, we ask for your detailed feedback in exchange for the analysis - 
+                a mutual exchange of value that will shape the project's future direction.</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -148,10 +150,11 @@ def main():
         with st.container():
             st.markdown("""
                 <div class='section'>
-                    <h3>About ResumeRocket5a</h3>
-                    <p>ResumeRocket5a leverages cutting-edge AI technology to analyze and optimize resumes, 
-                    helping job seekers present their best professional selves. Our platform has been developed 
-                    by industry experts with years of recruitment experience.</p>
+                    <h3>About Our Project</h3>
+                    <p>This prototype emerged from extensive research into AI applications in consulting recruitment. 
+                    As a 30-year executive recruiter specialized in management consulting, I've reviewed thousands 
+                    of resumes across major firms and levels. We've combined this industry expertise with targeted 
+                    AI capabilities to create a specialized analysis engine for management consultants' career documents.</p>
                 </div>
             """, unsafe_allow_html=True)
 
@@ -159,11 +162,11 @@ def main():
         with st.container():
             st.markdown("""
                 <div class='section'>
-                    <h3>Beta Program Eligibility</h3>
+                    <h3>Eligibility Requirements</h3>
                     <ul>
-                        <li>Currently seeking job opportunities</li>
-                        <li>Willing to provide detailed feedback on the platform</li>
-                        <li>Have a resume in PDF or DOCX format</li>
+                        <li>Must be a current management consultant or have worked as one within the past two years</li>
+                        <li>Must be actively or passively seeking new employment opportunities</li>
+                        <li>Must commit to providing detailed feedback and suggestions after using the tool</li>
                     </ul>
                 </div>
             """, unsafe_allow_html=True)
@@ -171,7 +174,7 @@ def main():
         # Application Form
         with st.container():
             st.markdown("<div class='section'>", unsafe_allow_html=True)
-            st.subheader("Apply for Beta Access")
+            st.subheader("Enter Your Information")
 
             with st.form("beta_access_form"):
                 col1, col2 = st.columns(2)
@@ -182,17 +185,17 @@ def main():
                 with col2:
                     last_name = st.text_input("Last Name", key="last_name")
 
-                email = st.text_input("Email", key="email")
+                email = st.text_input("Email Address", key="email")
 
                 uploaded_file = st.file_uploader(
-                    "Upload your resume (PDF or DOCX)",
+                    "Upload Resume",
                     type=['pdf', 'docx'],
                     help="We accept PDF or Word documents up to 10MB",
                     key="resume"
                 )
 
                 # Agreement checkbox
-                agree = st.checkbox("I agree to provide feedback on my experience with ResumeRocket5a")
+                agree = st.checkbox("I commit to providing detailed feedback after using the tool")
 
                 submit_button = st.form_submit_button("Submit Application")
 
@@ -226,8 +229,9 @@ def main():
         # Footer
         st.markdown("""
             <div class='footer'>
-                <p>© 2025 ResumeRocket5a Prototype | Contact: support@resumerocket5a.example.com</p>
-                <small>By submitting your application, you agree to our Terms of Service and Privacy Policy.</small>
+                <p>© 2025 ResumeRocket5 Prototype | Contact: support@resumerocket5.example.com</p>
+                <small>This is a prototype version for demonstration purposes only. As with all AI-powered tools, 
+                outputs may contain inaccuracies and should be reviewed carefully.</small>
             </div>
         """, unsafe_allow_html=True)
 
