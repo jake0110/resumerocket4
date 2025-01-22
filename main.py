@@ -108,42 +108,56 @@ def main():
         st.markdown("""
             <style>
             .main {
-                padding: 1rem;
+                padding: 0.8rem;
             }
             .content-section {
-                margin-bottom: 1rem;
+                margin-bottom: 0.8rem;
                 padding: 1rem;
                 background-color: white;
                 border-radius: 5px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             }
             .info-text {
-                font-size: 0.95rem;
-                line-height: 1.5;
-                margin-bottom: 1rem;
+                font-size: 0.9rem;
+                line-height: 1.4;
+                color: #333;
+                margin-bottom: 0.8rem;
             }
             .requirements-list {
                 margin: 0;
                 padding-left: 1.2rem;
+                list-style-type: disc;
             }
             .requirements-list li {
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.4rem;
+                line-height: 1.3;
+                color: #333;
             }
-            .footer {
-                margin-top: 2rem;
-                padding: 1rem;
-                background-color: #f7f7f7;
-                border-radius: 5px;
-                text-align: center;
-                font-size: 0.9rem;
+            h4 {
+                margin-bottom: 0.6rem;
+                color: #1E1E1E;
+                font-size: 1.1rem;
             }
             div[data-testid="stForm"] {
                 background-color: white;
                 padding: 1rem;
                 border-radius: 5px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             }
             div.stButton > button {
                 width: 100%;
-                margin-top: 1rem;
+                margin-top: 0.8rem;
+            }
+            .footer {
+                margin-top: 1.5rem;
+                padding: 0.8rem;
+                background-color: #f7f7f7;
+                border-radius: 5px;
+                text-align: center;
+                font-size: 0.85rem;
+            }
+            .stMarkdown {
+                margin-bottom: 0.4rem;
             }
             </style>
         """, unsafe_allow_html=True)
@@ -153,51 +167,26 @@ def main():
         st.markdown("A specialized AI-powered resume analysis tool for management consultants, designed to enhance interview opportunities and enrich conversations with hiring managers.")
 
         # Create two columns for main content
-        col1, col2 = st.columns([5, 7])
+        col1, col2 = st.columns([6, 4])
 
-        # Left Column - Project Information
+        # Left Column - Application Form
         with col1:
-            st.markdown("""
-                <div class='content-section'>
-                    <h4>Limited Prototype Release</h4>
-                    <p class='info-text'>This limited prototype release (50 users) will help us evaluate the tool's viability. 
-                    While there's no monetary cost, we ask for your detailed feedback in exchange for the analysis - 
-                    a mutual exchange of value that will shape the project's future direction.</p>
-
-                    <h4>About Our Project</h4>
-                    <p class='info-text'>This prototype emerged from extensive research into AI applications in consulting recruitment. 
-                    As a 30-year executive recruiter specialized in management consulting, I've reviewed thousands of resumes across major 
-                    firms and levels. We've combined this industry expertise with targeted AI capabilities to create a specialized 
-                    analysis engine for management consultants' career documents.</p>
-
-                    <h4>Eligibility Requirements</h4>
-                    <ul class='requirements-list'>
-                        <li>Must be a current management consultant or have worked as one within the past two years</li>
-                        <li>Must be actively or passively seeking new employment opportunities</li>
-                        <li>Must commit to providing detailed feedback and suggestions after using the tool</li>
-                    </ul>
-                </div>
-            """, unsafe_allow_html=True)
-
-        # Right Column - Application Form
-        with col2:
             st.markdown("<div class='content-section'>", unsafe_allow_html=True)
             st.subheader("Enter Your Information")
 
             with st.form("beta_access_form"):
-                first_name = st.text_input("First Name", key="first_name")
-                last_name = st.text_input("Last Name", key="last_name")
-                email = st.text_input("Email Address", key="email")
+                first_name = st.text_input("First Name")
+                last_name = st.text_input("Last Name")
+                email = st.text_input("Email Address")
 
                 uploaded_file = st.file_uploader(
                     "Upload Resume",
                     type=['pdf', 'docx'],
-                    help="Limit 20MB per file • PDF, DOCX",
-                    key="resume"
+                    help="Limit 20MB per file • PDF, DOCX"
                 )
 
                 agree = st.checkbox("I commit to providing detailed feedback after using the tool")
-                submit_button = st.form_submit_button("Submit Application")
+                submit_button = st.form_submit_button("Upload Document")
 
                 if submit_button:
                     if not all([first_name, last_name, email]):
@@ -225,6 +214,34 @@ def main():
                         st.error("There was an error submitting your application. Please try again.")
 
             st.markdown("</div>", unsafe_allow_html=True)
+
+        # Right Column - Project Information
+        with col2:
+            st.markdown("""
+                <div class='content-section'>
+                    <h4>Limited Prototype Release</h4>
+                    <p class='info-text'>
+                        This limited prototype release (50 users) will help us evaluate the tool's viability. 
+                        While there's no monetary cost, we ask for your detailed feedback in exchange for the analysis - 
+                        a mutual exchange of value that will shape the project's future direction.
+                    </p>
+
+                    <h4>About Our Project</h4>
+                    <p class='info-text'>
+                        This prototype emerged from extensive research into AI applications in consulting recruitment. 
+                        As a 30-year executive recruiter specialized in management consulting, I've reviewed thousands 
+                        of resumes across major firms and levels. We've combined this industry expertise with targeted 
+                        AI capabilities to create a specialized analysis engine for management consultants' career documents.
+                    </p>
+
+                    <h4>Eligibility Requirements</h4>
+                    <ul class='requirements-list'>
+                        <li>Must be a current management consultant or have worked as one within the past two years</li>
+                        <li>Must be actively or passively seeking new employment opportunities</li>
+                        <li>Must commit to providing detailed feedback and suggestions after using the tool</li>
+                    </ul>
+                </div>
+            """, unsafe_allow_html=True)
 
         # Footer
         st.markdown("""
