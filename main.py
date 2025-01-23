@@ -73,55 +73,64 @@ def main():
             initial_sidebar_state="collapsed"
         )
 
-        # Custom CSS (merged with edited CSS)
+        # CSS Styles
         st.markdown("""
-            <style>
-            .main {
-                padding: 2rem;
-                max-width: 1200px;
-                margin: 0 auto;
-            }
-            .stApp {
-                background-color: #f8f9fa;
-            }
-            .content-box {
-                background-color: white;
-                padding: 1.5rem;
-                border-radius: 8px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                margin-bottom: 1.5rem;
-            }
-            /* Custom layout for requirements container */
-            .requirements-container {
-                margin: 2rem 0;
-                padding: 1rem;
-            }
-            /* Individual requirement row */
-            .requirement-row {
-                display: flex;
-                align-items: center;
-                margin-bottom: 1.5rem;
-                gap: 1rem;
-            }
-            /* Text container */
-            .requirement-text {
-                flex: 1;
-                margin: 0;
-                line-height: 1.5;
-            }
-            /* Checkbox container */
-            .checkbox-container {
-                display: flex;
-                align-items: center;
-                min-width: 24px;
-            }
-            /* Custom checkbox styling */
-            .stCheckbox {
-                margin: 0 !important;
-                padding: 0 !important;
-                vertical-align: middle !important;
-            }
-            </style>
+        <style>
+        /* Main container for requirements section */
+        .requirements-container {
+            margin: 2rem 0;
+            padding: 1rem;
+        }
+
+        /* Individual requirement row */
+        .requirement-row {
+            display: flex;
+            align-items: center;
+            min-height: 48px;  /* Ensures consistent height regardless of text length */
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+
+        /* Text container */
+        .requirement-text {
+            flex: 1;
+            margin: 0;
+            line-height: 1.5;
+            padding: 0.5rem 0;  /* Adds consistent vertical padding */
+        }
+
+        /* Checkbox container */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            min-width: 24px;
+            align-self: center;  /* Ensures vertical centering */
+        }
+
+        /* Custom checkbox styling */
+        .stCheckbox {
+            margin: 0 !important;
+            padding: 0 !important;
+            vertical-align: middle !important;
+        }
+
+        /* Additional styles for layout */
+        .main {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .stApp {
+            background-color: #f8f9fa;
+        }
+        .content-box {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+        </style>
         """, unsafe_allow_html=True)
 
         # Header
@@ -147,7 +156,7 @@ def main():
                     "value that will shape the project's future direction."
                 )
 
-                # Eligibility Requirements (Revised)
+                # Requirements Section
                 st.title("Eligibility Requirements")
                 with st.container():
                     st.markdown('<div class="requirements-container">', unsafe_allow_html=True)
@@ -157,7 +166,7 @@ def main():
                     with col1:
                         st.markdown("""
                             <div class="requirement-text">
-                            I am a current management consultant or have worked as one within the past two years
+                            I have worked as a management consultant within the past two years.
                             </div>
                         """, unsafe_allow_html=True)
                     with col2:
@@ -168,7 +177,7 @@ def main():
                     with col1:
                         st.markdown("""
                             <div class="requirement-text">
-                            I am actively or passively seeking new employment opportunities
+                            I am actively or passively seeking new employment opportunities.
                             </div>
                         """, unsafe_allow_html=True)
                     with col2:
@@ -179,14 +188,13 @@ def main():
                     with col1:
                         st.markdown("""
                             <div class="requirement-text">
-                            I commit to providing detailed feedback and suggestions after using the tool
+                            I commit to providing detailed feedback and suggestions after using the tool.
                             </div>
                         """, unsafe_allow_html=True)
                     with col2:
                         st.checkbox("", key="feedback_check", label_visibility="collapsed")
 
                     st.markdown('</div>', unsafe_allow_html=True)
-
 
         # Right Column - Form
         with right_col:
@@ -215,7 +223,9 @@ def main():
                             st.error("Please upload your resume")
                             return
 
-                        if not all([st.session_state.get("consultant_check", False), st.session_state.get("seeking_check", False), st.session_state.get("feedback_check", False)]):
+                        if not all([st.session_state.get("consultant_check", False), 
+                                  st.session_state.get("seeking_check", False), 
+                                  st.session_state.get("feedback_check", False)]):
                             st.error("Please confirm all eligibility requirements")
                             return
 

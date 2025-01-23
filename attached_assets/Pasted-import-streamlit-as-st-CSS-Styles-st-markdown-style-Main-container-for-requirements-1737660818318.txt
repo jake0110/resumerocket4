@@ -1,0 +1,91 @@
+import streamlit as st
+
+# CSS Styles
+st.markdown("""
+<style>
+/* Main container for requirements section */
+.requirements-container {
+    margin: 2rem 0;
+    padding: 1rem;
+}
+
+/* Individual requirement row */
+.requirement-row {
+    display: flex;
+    align-items: center;
+    min-height: 48px;  /* Ensures consistent height regardless of text length */
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+/* Text container */
+.requirement-text {
+    flex: 1;
+    margin: 0;
+    line-height: 1.5;
+    padding: 0.5rem 0;  /* Adds consistent vertical padding */
+}
+
+/* Checkbox container */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    min-width: 24px;
+    align-self: center;  /* Ensures vertical centering */
+}
+
+/* Custom checkbox styling */
+.stCheckbox {
+    margin: 0 !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Page Title
+st.title("Eligibility Requirements")
+
+# Requirements Section
+with st.container():
+    st.markdown('<div class="requirements-container">', unsafe_allow_html=True)
+    
+    # First Requirement
+    col1, col2 = st.columns([0.9, 0.1])
+    with col1:
+        st.markdown("""
+            <div class="requirement-text">
+            I have worked as a management consultant within the past two years.
+            </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.checkbox("", key="consultant_check", label_visibility="collapsed")
+    
+    # Second Requirement
+    col1, col2 = st.columns([0.9, 0.1])
+    with col1:
+        st.markdown("""
+            <div class="requirement-text">
+            I am actively or passively seeking new employment opportunities.
+            </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.checkbox("", key="seeking_check", label_visibility="collapsed")
+    
+    # Third Requirement
+    col1, col2 = st.columns([0.9, 0.1])
+    with col1:
+        st.markdown("""
+            <div class="requirement-text">
+            I commit to providing detailed feedback and suggestions after using the tool.
+            </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.checkbox("", key="feedback_check", label_visibility="collapsed")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Additional form fields
+st.text_input("Last Name")
+st.text_input("Email Address")
+st.file_uploader("Upload Resume", type=['pdf', 'docx'])
