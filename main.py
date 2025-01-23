@@ -78,57 +78,25 @@ def main():
         <style>
         /* Main container for requirements section */
         .requirements-container {
-            margin: 2rem 0;
-            padding: 1rem;
-        }
-
-        /* Individual requirement row */
-        .requirement-row {
-            display: flex;
-            align-items: center;
-            min-height: 48px;  /* Ensures consistent height regardless of text length */
-            margin-bottom: 1.5rem;
-            gap: 1rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
         }
 
         /* Text container */
         .requirement-text {
             flex: 1;
             margin: 0;
-            line-height: 1.5;
-            padding: 0.5rem 0;  /* Adds consistent vertical padding */
-        }
-
-        /* Checkbox container */
-        .checkbox-container {
+            line-height: 1.4;
+            padding: 0.25rem 0;
             display: flex;
             align-items: center;
-            min-width: 24px;
-            align-self: center;  /* Ensures vertical centering */
         }
 
-        /* Custom checkbox styling */
+        /* Checkbox container adjustment */
         .stCheckbox {
             margin: 0 !important;
             padding: 0 !important;
-            vertical-align: middle !important;
-        }
-
-        /* Additional styles for layout */
-        .main {
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .stApp {
-            background-color: #f8f9fa;
-        }
-        .content-box {
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
+            transform: translateY(-2px) !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -157,7 +125,7 @@ def main():
                 )
 
                 # Requirements Section
-                st.title("Eligibility Requirements")
+                st.markdown("### Eligibility Requirements")
                 with st.container():
                     st.markdown('<div class="requirements-container">', unsafe_allow_html=True)
 
@@ -188,7 +156,7 @@ def main():
                     with col1:
                         st.markdown("""
                             <div class="requirement-text">
-                            I commit to providing detailed feedback and suggestions after using the tool.
+                            I commit to providing detailed feedback and suggestions.
                             </div>
                         """, unsafe_allow_html=True)
                     with col2:
