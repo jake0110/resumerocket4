@@ -73,7 +73,7 @@ def main():
             initial_sidebar_state="collapsed"
         )
 
-        # Custom CSS (merged with edited CSS)
+        # Custom CSS
         st.markdown("""
             <style>
             .main {
@@ -93,33 +93,52 @@ def main():
             }
             /* Custom layout for requirements container */
             .requirements-container {
-                margin: 2rem 0;
-                padding: 1rem;
+                margin-top: 1rem;
             }
-            /* Individual requirement row */
+            /* Individual requirement row styling */
             .requirement-row {
-                display: flex;
-                align-items: center;
-                margin-bottom: 1.5rem;
-                gap: 1rem;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                padding: 8px 0 !important;
+                min-height: 48px !important;
             }
-            /* Text container */
-            .requirement-text {
+            /* Text container styling */
+            .requirement-text-container {
                 flex: 1;
-                margin: 0;
-                line-height: 1.5;
-            }
-            /* Checkbox container */
-            .checkbox-container {
+                padding-right: 16px;
                 display: flex;
                 align-items: center;
-                min-width: 24px;
             }
-            /* Custom checkbox styling */
-            .stCheckbox {
+            /* Reset margins and paddings for checkbox container */
+            div:has(>.stCheckbox) {
                 margin: 0 !important;
                 padding: 0 !important;
-                vertical-align: middle !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+            /* Checkbox styling */
+            .stCheckbox {
+                display: flex !important;
+                align-items: center !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                transform: translateY(1px) !important;
+            }
+            /* Hide checkbox label */
+            .stCheckbox [data-testid="stMarkdownContainer"] {
+                display: none !important;
+            }
+            /* Remove default checkbox text */
+            .st-emotion-cache-1gulkj5 {
+                display: none !important;
+            }
+            /* Style requirements text */
+            .requirement-text {
+                margin: 0 !important;
+                padding: 0 !important;
+                color: #2C3E50;
+                line-height: 1.5;
             }
             </style>
         """, unsafe_allow_html=True)
@@ -147,46 +166,31 @@ def main():
                     "value that will shape the project's future direction."
                 )
 
-                # Eligibility Requirements (Revised)
-                st.title("Eligibility Requirements")
-                with st.container():
-                    st.markdown('<div class="requirements-container">', unsafe_allow_html=True)
+                # Eligibility Requirements
+                st.markdown("### Eligibility Requirements")
 
-                    # First Requirement
-                    col1, col2 = st.columns([0.9, 0.1])
-                    with col1:
-                        st.markdown("""
-                            <div class="requirement-text">
-                            I am a current management consultant or have worked as one within the past two years
-                            </div>
-                        """, unsafe_allow_html=True)
-                    with col2:
-                        st.checkbox("", key="consultant_check", label_visibility="collapsed")
+                # Container for requirements
+                st.markdown('<div class="requirements-container">', unsafe_allow_html=True)
 
-                    # Second Requirement
-                    col1, col2 = st.columns([0.9, 0.1])
-                    with col1:
-                        st.markdown("""
-                            <div class="requirement-text">
-                            I am actively or passively seeking new employment opportunities
-                            </div>
-                        """, unsafe_allow_html=True)
-                    with col2:
-                        st.checkbox("", key="seeking_check", label_visibility="collapsed")
+                # First requirement
+                st.markdown('<div class="requirement-row">', unsafe_allow_html=True)
+                st.markdown('<div class="requirement-text-container"><p class="requirement-text">I am a current management consultant or have worked as one within the past two years</p></div>', unsafe_allow_html=True)
+                st.checkbox("", key="is_consultant", label_visibility="collapsed")
+                st.markdown('</div>', unsafe_allow_html=True)
 
-                    # Third Requirement
-                    col1, col2 = st.columns([0.9, 0.1])
-                    with col1:
-                        st.markdown("""
-                            <div class="requirement-text">
-                            I commit to providing detailed feedback and suggestions after using the tool
-                            </div>
-                        """, unsafe_allow_html=True)
-                    with col2:
-                        st.checkbox("", key="feedback_check", label_visibility="collapsed")
+                # Second requirement
+                st.markdown('<div class="requirement-row">', unsafe_allow_html=True)
+                st.markdown('<div class="requirement-text-container"><p class="requirement-text">I am actively or passively seeking new employment opportunities</p></div>', unsafe_allow_html=True)
+                st.checkbox("", key="is_job_seeking", label_visibility="collapsed")
+                st.markdown('</div>', unsafe_allow_html=True)
 
-                    st.markdown('</div>', unsafe_allow_html=True)
+                # Third requirement
+                st.markdown('<div class="requirement-row">', unsafe_allow_html=True)
+                st.markdown('<div class="requirement-text-container"><p class="requirement-text">I commit to providing detailed feedback and suggestions after using the tool</p></div>', unsafe_allow_html=True)
+                st.checkbox("", key="will_provide_feedback", label_visibility="collapsed")
+                st.markdown('</div>', unsafe_allow_html=True)
 
+                st.markdown('</div>', unsafe_allow_html=True)
 
         # Right Column - Form
         with right_col:
@@ -215,7 +219,7 @@ def main():
                             st.error("Please upload your resume")
                             return
 
-                        if not all([st.session_state.get("consultant_check", False), st.session_state.get("seeking_check", False), st.session_state.get("feedback_check", False)]):
+                        if not all([st.session_state.is_consultant, st.session_state.is_job_seeking, st.session_state.will_provide_feedback]):
                             st.error("Please confirm all eligibility requirements")
                             return
 
