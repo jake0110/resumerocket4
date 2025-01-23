@@ -91,28 +91,45 @@ def main():
                 box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                 margin-bottom: 1.5rem;
             }
-            /* Hide checkbox label text */
-            .stCheckbox label p {
-                display: none !important;
-            }
-            .stCheckbox [data-testid="stMarkdownContainer"] {
-                display: none;
-            }
             /* Style requirements text */
             .requirement-text {
                 margin-bottom: 0 !important;
                 padding: 8px 0;
                 color: #2C3E50;
-            }
-            /* Ensure checkbox is properly aligned */
-            .stCheckbox {
-                margin-bottom: 0 !important;
                 display: flex;
-                justify-content: flex-end;
+                align-items: center;
+                min-height: 40px;
+            }
+            /* Remove checkbox label */
+            .stCheckbox [data-testid="stMarkdownContainer"] {
+                display: none;
+            }
+            /* Center checkbox vertically */
+            .stCheckbox {
+                display: flex;
+                align-items: center;
+                margin: 0;
+                padding: 0;
             }
             /* Remove the value text next to checkbox */
             .st-emotion-cache-1gulkj5 {
                 display: none !important;
+            }
+            /* Custom layout for requirements */
+            .requirements-container > div {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                margin-bottom: 8px !important;
+            }
+            .requirements-text {
+                flex: 1;
+                padding-right: 16px;
+            }
+            .requirements-checkbox {
+                flex: 0 0 auto;
+                margin: 0;
+                padding: 0;
             }
             </style>
         """, unsafe_allow_html=True)
@@ -143,26 +160,28 @@ def main():
                 # Eligibility Requirements
                 st.markdown("### Eligibility Requirements")
 
+                # Container for requirements
+                st.markdown('<div class="requirements-container">', unsafe_allow_html=True)
+
                 # First requirement
-                col1, col2 = st.columns([0.95, 0.05])
-                with col1:
-                    st.markdown('<p class="requirement-text">I am a current management consultant or have worked as one within the past two years</p>', unsafe_allow_html=True)
-                with col2:
-                    st.checkbox("", key="is_consultant", label_visibility="collapsed")
+                st.markdown('<div>', unsafe_allow_html=True)
+                st.markdown('<div class="requirements-text">I am a current management consultant or have worked as one within the past two years</div>', unsafe_allow_html=True)
+                st.checkbox("", key="is_consultant", label_visibility="collapsed")
+                st.markdown('</div>', unsafe_allow_html=True)
 
                 # Second requirement
-                col1, col2 = st.columns([0.95, 0.05])
-                with col1:
-                    st.markdown('<p class="requirement-text">I am actively or passively seeking new employment opportunities</p>', unsafe_allow_html=True)
-                with col2:
-                    st.checkbox("", key="is_job_seeking", label_visibility="collapsed")
+                st.markdown('<div>', unsafe_allow_html=True)
+                st.markdown('<div class="requirements-text">I am actively or passively seeking new employment opportunities</div>', unsafe_allow_html=True)
+                st.checkbox("", key="is_job_seeking", label_visibility="collapsed")
+                st.markdown('</div>', unsafe_allow_html=True)
 
                 # Third requirement
-                col1, col2 = st.columns([0.95, 0.05])
-                with col1:
-                    st.markdown('<p class="requirement-text">I commit to providing detailed feedback and suggestions after using the tool</p>', unsafe_allow_html=True)
-                with col2:
-                    st.checkbox("", key="will_provide_feedback", label_visibility="collapsed")
+                st.markdown('<div>', unsafe_allow_html=True)
+                st.markdown('<div class="requirements-text">I commit to providing detailed feedback and suggestions after using the tool</div>', unsafe_allow_html=True)
+                st.checkbox("", key="will_provide_feedback", label_visibility="collapsed")
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                st.markdown('</div>', unsafe_allow_html=True)
 
         # Right Column - Form
         with right_col:
