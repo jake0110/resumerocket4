@@ -140,11 +140,9 @@ def main():
 
                 # Eligibility Requirements
                 st.markdown("### Eligibility Requirements")
-                st.markdown("""
-                    - Must be a current management consultant or have worked as one within the past two years
-                    - Must be actively or passively seeking new employment opportunities
-                    - Must commit to providing detailed feedback and suggestions after using the tool
-                """)
+                is_consultant = st.checkbox("I am a current management consultant or have worked as one within the past two years")
+                is_job_seeking = st.checkbox("I am actively or passively seeking new employment opportunities")
+                will_provide_feedback = st.checkbox("I commit to providing detailed feedback and suggestions after using the tool")
 
         # Right Column - Form
         with right_col:
@@ -162,7 +160,6 @@ def main():
                         help="Limit 20MB per file • PDF, DOCX"
                     )
 
-                    agree = st.checkbox("I commit to providing detailed feedback after using the tool")
                     submit_button = st.form_submit_button("Upload Document")
 
                     if submit_button:
@@ -174,8 +171,8 @@ def main():
                             st.error("Please upload your resume")
                             return
 
-                        if not agree:
-                            st.error("Please agree to provide feedback to join the beta program")
+                        if not all([is_consultant, is_job_seeking, will_provide_feedback]):
+                            st.error("Please confirm all eligibility requirements")
                             return
 
                         form_data = {
