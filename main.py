@@ -91,54 +91,27 @@ def main():
                 box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                 margin-bottom: 1.5rem;
             }
-            .section-title {
-                font-size: 1.2rem;
-                font-weight: 600;
-                margin-bottom: 1rem;
-                color: #1E1E1E;
+            /* Hide checkbox label text */
+            .stCheckbox label p {
+                display: none !important;
             }
-            .section-text {
-                font-size: 1rem;
-                line-height: 1.6;
-                color: #4A4A4A;
-                margin-bottom: 1.5rem;
+            .stCheckbox [data-testid="stMarkdownContainer"] {
+                display: none;
             }
-            .footer {
-                text-align: center;
-                padding: 1.5rem;
-                margin-top: 2rem;
-                font-size: 0.9rem;
-                color: #666;
-                background-color: #f8f9fa;
-                border-radius: 8px;
-            }
-            /* Custom checkbox container */
-            .checkbox-container {
-                display: flex;
-                align-items: center;
-                justify-content: flex-end; /* Align checkbox to the right */
-                padding: 10px 15px;
-                margin: 8px 0;
-                background-color: #ffffff;
-                border-radius: 6px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                transition: all 0.2s ease;
-            }
-            .checkbox-container:hover {
-                box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-            }
-            .checkbox-label {
-                flex-grow: 1;
-                padding-right: 15px;
-                font-size: 0.95rem;
+            /* Style requirements text */
+            .requirement-text {
+                margin-bottom: 0 !important;
+                padding: 8px 0;
                 color: #2C3E50;
             }
-            /* Make the checkbox itself more prominent */
-            .stCheckbox > label > div[role="checkbox"] {
-                transform: scale(1.2);
+            /* Ensure checkbox is properly aligned */
+            .stCheckbox {
+                margin-bottom: 0 !important;
+                display: flex;
+                justify-content: flex-end;
             }
-            /* Hide the default checkbox text */
-            .stCheckbox label p {
+            /* Remove the value text next to checkbox */
+            .st-emotion-cache-1gulkj5 {
                 display: none !important;
             }
             </style>
@@ -169,20 +142,27 @@ def main():
 
                 # Eligibility Requirements
                 st.markdown("### Eligibility Requirements")
-                st.markdown('<div class="checkbox-container">'
-                          '<div class="checkbox-label">I am a current management consultant or have worked as one within the past two years</div>'
-                          f'{st.checkbox("", key="is_consultant", label_visibility="collapsed", value=True)}</div>', 
-                          unsafe_allow_html=True)
 
-                st.markdown('<div class="checkbox-container">'
-                          '<div class="checkbox-label">I am actively or passively seeking new employment opportunities</div>'
-                          f'{st.checkbox("", key="is_job_seeking", label_visibility="collapsed", value=True)}</div>', 
-                          unsafe_allow_html=True)
+                # First requirement
+                col1, col2 = st.columns([0.95, 0.05])
+                with col1:
+                    st.markdown('<p class="requirement-text">I am a current management consultant or have worked as one within the past two years</p>', unsafe_allow_html=True)
+                with col2:
+                    st.checkbox("", key="is_consultant", label_visibility="collapsed")
 
-                st.markdown('<div class="checkbox-container">'
-                          '<div class="checkbox-label">I commit to providing detailed feedback and suggestions after using the tool</div>'
-                          f'{st.checkbox("", key="will_provide_feedback", label_visibility="collapsed", value=True)}</div>', 
-                          unsafe_allow_html=True)
+                # Second requirement
+                col1, col2 = st.columns([0.95, 0.05])
+                with col1:
+                    st.markdown('<p class="requirement-text">I am actively or passively seeking new employment opportunities</p>', unsafe_allow_html=True)
+                with col2:
+                    st.checkbox("", key="is_job_seeking", label_visibility="collapsed")
+
+                # Third requirement
+                col1, col2 = st.columns([0.95, 0.05])
+                with col1:
+                    st.markdown('<p class="requirement-text">I commit to providing detailed feedback and suggestions after using the tool</p>', unsafe_allow_html=True)
+                with col2:
+                    st.checkbox("", key="will_provide_feedback", label_visibility="collapsed")
 
         # Right Column - Form
         with right_col:
@@ -232,7 +212,7 @@ def main():
 
         # Footer
         st.markdown("""
-            <div class="footer">
+            <div style="text-align: center; padding: 1.5rem; margin-top: 2rem; font-size: 0.9rem; color: #666;">
                 © 2025 ResumeRocket5 Prototype | Contact: support@resumerocket5.example.com<br>
                 <small>This is a prototype version for demonstration purposes only. As with all AI-powered tools, 
                 outputs may contain inaccuracies and should be reviewed carefully.</small>
