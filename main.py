@@ -112,6 +112,35 @@ def main():
                 background-color: #f8f9fa;
                 border-radius: 8px;
             }
+            /* Custom checkbox container */
+            .checkbox-container {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end; /* Align checkbox to the right */
+                padding: 10px 15px;
+                margin: 8px 0;
+                background-color: #ffffff;
+                border-radius: 6px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                transition: all 0.2s ease;
+            }
+            .checkbox-container:hover {
+                box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            }
+            .checkbox-label {
+                flex-grow: 1;
+                padding-right: 15px;
+                font-size: 0.95rem;
+                color: #2C3E50;
+            }
+            /* Make the checkbox itself more prominent */
+            .stCheckbox > label > div[role="checkbox"] {
+                transform: scale(1.2);
+            }
+            /* Hide the default checkbox text */
+            .stCheckbox label p {
+                display: none !important;
+            }
             </style>
         """, unsafe_allow_html=True)
 
@@ -140,9 +169,20 @@ def main():
 
                 # Eligibility Requirements
                 st.markdown("### Eligibility Requirements")
-                is_consultant = st.checkbox("I am a current management consultant or have worked as one within the past two years")
-                is_job_seeking = st.checkbox("I am actively or passively seeking new employment opportunities")
-                will_provide_feedback = st.checkbox("I commit to providing detailed feedback and suggestions after using the tool")
+                st.markdown('<div class="checkbox-container">'
+                          '<div class="checkbox-label">I am a current management consultant or have worked as one within the past two years</div>'
+                          f'{st.checkbox("", key="is_consultant", label_visibility="collapsed", value=True)}</div>', 
+                          unsafe_allow_html=True)
+
+                st.markdown('<div class="checkbox-container">'
+                          '<div class="checkbox-label">I am actively or passively seeking new employment opportunities</div>'
+                          f'{st.checkbox("", key="is_job_seeking", label_visibility="collapsed", value=True)}</div>', 
+                          unsafe_allow_html=True)
+
+                st.markdown('<div class="checkbox-container">'
+                          '<div class="checkbox-label">I commit to providing detailed feedback and suggestions after using the tool</div>'
+                          f'{st.checkbox("", key="will_provide_feedback", label_visibility="collapsed", value=True)}</div>', 
+                          unsafe_allow_html=True)
 
         # Right Column - Form
         with right_col:
@@ -171,7 +211,7 @@ def main():
                             st.error("Please upload your resume")
                             return
 
-                        if not all([is_consultant, is_job_seeking, will_provide_feedback]):
+                        if not all([st.session_state.is_consultant, st.session_state.is_job_seeking, st.session_state.will_provide_feedback]):
                             st.error("Please confirm all eligibility requirements")
                             return
 
