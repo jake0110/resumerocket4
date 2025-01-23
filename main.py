@@ -185,7 +185,12 @@ def main():
                         }
 
                         if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
-                            st.success("Your application has been submitted successfully! We'll be in touch soon.")
+                            st.success("""
+                                Thank you for submitting your resume! 
+
+                                We'll analyze your document and send detailed insights to your email shortly. 
+                                Your feedback will be invaluable in shaping the future of ResumeRocket5.
+                            """)
                             st.balloons()
                         else:
                             st.error("There was an error submitting your application. Please try again.")
