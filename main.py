@@ -125,7 +125,7 @@ def main():
                 )
 
                 # Requirements Section
-                st.markdown("### Eligibility Requirements")
+                st.markdown('<h3 style="font-size: 20px;">Eligibility Requirements</h3>', unsafe_allow_html=True)
                 with st.container():
                     st.markdown('<div class="requirements-container">', unsafe_allow_html=True)
 
@@ -191,8 +191,8 @@ def main():
                             st.error("Please upload your resume")
                             return
 
-                        if not all([st.session_state.get("consultant_check", False), 
-                                  st.session_state.get("seeking_check", False), 
+                        if not all([st.session_state.get("consultant_check", False),
+                                  st.session_state.get("seeking_check", False),
                                   st.session_state.get("feedback_check", False)]):
                             st.error("Please confirm all eligibility requirements")
                             return
@@ -215,7 +215,7 @@ def main():
         # Footer
         st.markdown("""
             <div style="text-align: center; padding: 1.5rem; margin-top: 2rem; font-size: 0.9rem; color: #666;">
-                © 2025 ResumeRocket5 Prototype | Contact: support@resumerocket5.example.com<br>
+                © 2025 ResumeRocket5 by Flycast Executive Search. | Contact: jason@flycastllc.com<br>
                 <small>This is a prototype version for demonstration purposes only. As with all AI-powered tools, 
                 outputs may contain inaccuracies and should be reviewed carefully.</small>
             </div>
