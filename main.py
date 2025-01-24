@@ -114,14 +114,13 @@ def main():
                 # About Our Project
                 st.markdown("### About Our Project")
                 st.write(
-                    "This project emerged from research conducted in artificial intelligence, its application to human "
-                    "resources and recruiting, combined with expertise gained from decades of recruiting in the management "
-                    "consulting field. The prototype brings together deep industry knowledge with AI-based language analysis "
-                    "to produce an analysis engine that sits at the leading edge of what AI can offer management consulting "
-                    "job seekers.\n\n"
-                    "This limited prototype release (50 users) will help us evaluate the tool's viability. While there's no "
-                    "monetary cost, we ask for your detailed feedback in exchange for the analysis - a mutual exchange of "
-                    "value that will shape the project's future direction."
+                    "This project emerged as an answer to management consulting job seekers asking for feedback about their "
+                    "resumes. While our deep recruiting experience provides guidance, the combination of decades of experience "
+                    "with AI language analysis offers deeper, more comprehensive, and actionable results.\n\n"
+                    "We're limiting this initial release to 30 participants to gather focused feedback that will shape the "
+                    "tool's development. Your detailed comments and suggestions will help us understand how AI can best serve "
+                    "management consulting job seekers and guide our future direction.\n\n"
+                    "Thank you very much for your interest and participation!"
                 )
 
                 # Requirements Section
