@@ -18,6 +18,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Constants
+MAX_SUBMISSIONS = 30
+
 def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
     """Send form data to webhook with improved logging and validation."""
     try:
@@ -66,6 +69,10 @@ def send_to_webhook(form_data: dict, file_data: Optional[tuple] = None) -> bool:
 def main():
     """Main application entry point"""
     try:
+        # Initialize session state for submission counter
+        if 'submission_count' not in st.session_state:
+            st.session_state.submission_count = 0
+
         # Configure page
         st.set_page_config(
             page_title="ResumeRocket5 Prototype",
@@ -76,13 +83,23 @@ def main():
         # CSS Styles
         st.markdown("""
         <style>
-        /* Main container for requirements section */
-        .requirements-container {
-            margin-top: 0.5rem;
-            padding: 0.5rem;
+        .counter-container {
+            background-color: #f0f2f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            text-align: center;
         }
-
-        /* Text container */
+        .counter-text {
+            font-size: 1.2rem;
+            color: #262730;
+            margin-bottom: 0.5rem;
+        }
+        .counter-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #F63366;
+        }
         .requirement-text {
             flex: 1;
             margin: 0;
@@ -91,8 +108,6 @@ def main():
             display: flex;
             align-items: center;
         }
-
-        /* Checkbox container adjustment */
         .stCheckbox {
             margin: 0 !important;
             padding: 0 !important;
@@ -104,6 +119,15 @@ def main():
         # Header
         st.title("ResumeRocket5 Prototype")
         st.markdown("A specialized AI-powered resume analysis tool for management consultants, designed to enhance interview opportunities and enrich conversations with hiring managers.")
+
+        # Display counter
+        spots_remaining = MAX_SUBMISSIONS - st.session_state.submission_count
+        st.markdown(f"""
+        <div class="counter-container">
+            <div class="counter-text">Limited Release Spots Remaining</div>
+            <div class="counter-number">{spots_remaining}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
         # Create two columns for main content
         left_col, right_col = st.columns([6, 4])
@@ -119,7 +143,7 @@ def main():
                     "consulting field. The prototype brings together deep industry knowledge with AI-based language analysis "
                     "to produce an analysis engine that sits at the leading edge of what AI can offer management consulting "
                     "job seekers.\n\n"
-                    "This limited prototype release (50 users) will help us evaluate the tool's viability. While there's no "
+                    f"This limited prototype release ({MAX_SUBMISSIONS} users) will help us evaluate the tool's viability. While there's no "
                     "monetary cost, we ask for your detailed feedback in exchange for the analysis - a mutual exchange of "
                     "value that will shape the project's future direction."
                 )
@@ -127,8 +151,6 @@ def main():
                 # Requirements Section
                 st.markdown('<h3 style="font-size: 20px;">Eligibility Requirements</h3>', unsafe_allow_html=True)
                 with st.container():
-                    st.markdown('<div class="requirements-container">', unsafe_allow_html=True)
-
                     # First Requirement
                     col1, col2 = st.columns([0.9, 0.1])
                     with col1:
@@ -162,55 +184,63 @@ def main():
                     with col2:
                         st.checkbox("", key="feedback_check", label_visibility="collapsed")
 
-                    st.markdown('</div>', unsafe_allow_html=True)
-
         # Right Column - Form
         with right_col:
             with st.container():
                 st.markdown("### Enter Your Information")
 
-                with st.form("beta_access_form", clear_on_submit=False):
-                    first_name = st.text_input("First Name")
-                    last_name = st.text_input("Last Name")
-                    email = st.text_input("Email Address")
+                if spots_remaining <= 0:
+                    st.warning("All spots in our limited release are currently filled.")
+                    with st.form("waitlist_form"):
+                        email = st.text_input("Email Address for Waitlist")
+                        submit_waitlist = st.form_submit_button("Join Waitlist")
 
-                    uploaded_file = st.file_uploader(
-                        "Upload Resume",
-                        type=['pdf', 'docx'],
-                        help="Limit 20MB per file • PDF, DOCX"
-                    )
+                        if submit_waitlist and email:
+                            st.success("You've been added to our waitlist! We'll notify you when a spot becomes available.")
+                else:
+                    with st.form("beta_access_form", clear_on_submit=False):
+                        first_name = st.text_input("First Name")
+                        last_name = st.text_input("Last Name")
+                        email = st.text_input("Email Address")
 
-                    submit_button = st.form_submit_button("Upload Document")
+                        uploaded_file = st.file_uploader(
+                            "Upload Resume",
+                            type=['pdf', 'docx'],
+                            help="Limit 20MB per file • PDF, DOCX"
+                        )
 
-                    if submit_button:
-                        if not all([first_name, last_name, email]):
-                            st.error("Please fill in all required fields")
-                            return
+                        submit_button = st.form_submit_button("Upload Document")
 
-                        if not uploaded_file:
-                            st.error("Please upload your resume")
-                            return
+                        if submit_button:
+                            if not all([first_name, last_name, email]):
+                                st.error("Please fill in all required fields")
+                                return
 
-                        if not all([st.session_state.get("consultant_check", False),
-                                  st.session_state.get("seeking_check", False),
-                                  st.session_state.get("feedback_check", False)]):
-                            st.error("Please confirm all eligibility requirements")
-                            return
+                            if not uploaded_file:
+                                st.error("Please upload your resume")
+                                return
 
-                        form_data = {
-                            'first_name': first_name,
-                            'last_name': last_name,
-                            'email': email,
-                        }
+                            if not all([st.session_state.get("consultant_check", False),
+                                    st.session_state.get("seeking_check", False),
+                                    st.session_state.get("feedback_check", False)]):
+                                st.error("Please confirm all eligibility requirements")
+                                return
 
-                        if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
-                            st.success("""
-                                Message received! You will receive analysis by email shortly. 
-                                If it does not arrive within 15 minutes, please check your spam folder.
-                            """)
-                            st.balloons()
-                        else:
-                            st.error("There was an error submitting your application. Please try again.")
+                            form_data = {
+                                'first_name': first_name,
+                                'last_name': last_name,
+                                'email': email,
+                            }
+
+                            if send_to_webhook(form_data, (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)):
+                                st.session_state.submission_count += 1
+                                st.success("""
+                                    Message received! You will receive analysis by email shortly. 
+                                    If it does not arrive within 15 minutes, please check your spam folder.
+                                """)
+                                st.balloons()
+                            else:
+                                st.error("There was an error submitting your application. Please try again.")
 
         # Footer
         st.markdown("""

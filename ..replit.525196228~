@@ -1,0 +1,38 @@
+modules = ["python-3.11"]
+
+[nix]
+channel = "stable-24_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Streamlit Server"
+
+[[workflows.workflow]]
+name = "Streamlit Server"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -m streamlit run main.py --server.address 0.0.0.0 --server.port 8501 --server.headless=true"
+waitForPort = 8501
+
+[deployment]
+run = ["sh", "-c", "python3 -m streamlit run main.py --server.address 0.0.0.0 --server.port 8501 --server.headless=true"]
+
+[[ports]]
+localPort = 8501
+externalPort = 80

@@ -16,4 +16,6 @@ dependencies = [
     "twilio>=9.4.1",
     "typing-extensions>=4.0.0",
     "typing>=3.10.0.0",
+    "pymongo>=4.10.1",
+    "pandas>=2.2.3",
 ]
