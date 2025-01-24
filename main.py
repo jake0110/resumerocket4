@@ -103,7 +103,7 @@ def main():
 
         # Header
         st.title("ResumeRocket5 Prototype")
-        st.markdown("A specialized AI-powered resume analysis tool for management consultants, designed to enhance interview opportunities and enrich conversations with hiring managers.")
+        st.markdown("A specialized AI-powered resume analysis tool for management consultants.")
 
         # Create two columns for main content
         left_col, right_col = st.columns([6, 4])
